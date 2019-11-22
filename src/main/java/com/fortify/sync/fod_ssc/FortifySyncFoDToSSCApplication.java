@@ -8,11 +8,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class FortifyFodSscSyncApplication {
+public class FortifySyncFoDToSSCApplication {
 	public static void main(String[] args) {
 		Constants.setSystemProperties();
 		checkConfigFile();
-		SpringApplication.run(FortifyFodSscSyncApplication.class, args);
+		SpringApplication.run(FortifySyncFoDToSSCApplication.class, args);
 	}
 
 	private static final void checkConfigFile() {

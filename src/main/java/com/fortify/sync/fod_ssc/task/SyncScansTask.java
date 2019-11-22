@@ -71,16 +71,15 @@ public class SyncScansTask {
 	}
 	
 	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {
+		ScanStatus sscScanStatus = syncData.getScanStatus();
 		for ( String scanType : syncData.getIncludedScanTypes() ) {
-			ScanStatus oldStatus = syncData.getScanStatus();
 			ScanStatus newStatus = ScanStatus.parse(fodRelease);
-			Date oldScanDate = oldStatus.getScanDate(scanType);
+			Date oldScanDate = sscScanStatus.getScanDate(scanType);
 			Date newScanDate = newStatus.getScanDate(scanType);
 			if ( newScanDate!=null && (oldScanDate==null || newScanDate.after(oldScanDate)) ) {
 				Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
 				try {
 					String fodReleaseId = syncData.getFodReleaseId();
-					System.out.println("Processing: "+syncData.hashCode());
 					System.out.println("Downloading "+scanType+" scan from release "+fodReleaseId);
 					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
 					System.out.println("Uploading "+scanType+" scan to version "+syncData.getApplicationVersionId());
@@ -90,6 +89,7 @@ public class SyncScansTask {
 						tempFile.toFile().delete();
 					}
 				}
+				sscScanStatus.setScanDate(scanType, newScanDate);
 			} 
 			
 		}

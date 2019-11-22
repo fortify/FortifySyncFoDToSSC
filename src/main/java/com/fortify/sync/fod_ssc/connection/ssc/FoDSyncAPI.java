@@ -62,6 +62,10 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 	
 	public void updateSyncStatus(SyncData syncData, JSONMap fodRelease) {
 		ScanStatus oldStatus = syncData.getScanStatus();
+		// TODO We should only copy properties from fodRelease for which we actually processed a scan
+		//      Otherwise if we temporarily disable a scan type, it won't be uploaded 
+		//      once we re-enable that scan type, until a new scan of that type is 
+		//      available on FoD
 		ScanStatus newStatus = ScanStatus.parse(fodRelease);
 		if ( newStatus!=null && !newStatus.equals(oldStatus) ) {
 			String applicationVersionId = syncData.getApplicationVersionId();
@@ -145,7 +149,7 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 		private Date dynamicScanDate;
 		private Date mobileScanDate;
 
-		private ScanStatus() {}
+		public ScanStatus() {}
 		
 		public static final ScanStatus parse(JSONMap fodRelease) {
 			ScanStatus result = new ScanStatus();
@@ -194,6 +198,15 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 			case "static": return getStaticScanDate();
 			case "dynamic": return getDynamicScanDate();
 			case "mobile": return getMobileScanDate();
+			default: throw new RuntimeException("Unknown scan type "+scanType);
+			}
+		}
+
+		public void setScanDate(String scanType, Date scanDate) {
+			switch (scanType.toLowerCase()) {
+			case "static": setStaticScanDate(scanDate); break;
+			case "dynamic": setDynamicScanDate(scanDate); break;
+			case "mobile": setMobileScanDate(scanDate); break;
 			default: throw new RuntimeException("Unknown scan type "+scanType);
 			}
 		}

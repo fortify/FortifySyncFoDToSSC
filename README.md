@@ -15,7 +15,7 @@ The following SSC preparations are required to use this utility:
     * FoD Sync - Include Scan Types: List of Values - Multiple Selection
         * Static
         * Dynamic
-        * Mobile
+        * ~~Mobile~~ (Currently not supported by FoD API)
     * FoD Sync - Status: Text - Multiple Lines, Hidden
     
 * Define a role 'FoD Sync - Releases' WITH universal access, with the following permissions:
