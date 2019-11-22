@@ -17,6 +17,11 @@ configurations {
 	}
 }
 
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 repositories {
 	mavenLocal()
     // repository with fortify-ps releases
@@ -41,8 +46,8 @@ dependencies {
 	}
 	
 	// Fortify client API dependencies
-	implementation 'com.fortify.client.api:client-api-ssc'
-	implementation 'com.fortify.client.api:client-api-fod'
+	implementation('com.fortify.client.api:client-api-ssc') { changing = true }
+	implementation('com.fortify.client.api:client-api-fod') { changing = true }
 }
 
 dependencyManagement {
