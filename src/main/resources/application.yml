@@ -1,0 +1,16 @@
+## Spring DATASOURCE (DataSourceAutoConfiguration & DataSourceProperties)
+# For now we don't need a data source; later on we can use a data source to
+# store configuration data
+#spring.datasource.url=jdbc:h2:${fortify.home:~/.fortify}/fod-ssc-sync/config;DB_CLOSE_ON_EXIT=FALSE
+
+spring:
+  quartz: ## QuartzProperties
+    job-store-type: memory
+    auto-startup: true
+    wait-for-jobs-to-complete-on-shutdown: true
+    properties:
+      org.quartz.threadPool.threadCount: 2
+      plugin.triggerHistory.class: org.quartz.plugins.history.LoggingTriggerHistoryPlugin
+      plugin.triggerHistory.triggerFiredMessage: 'Trigger [{1}.{0}] fired job [{6}.{5}] scheduled at: {2, date, dd-MM-yyyy HH:mm:ss.SSS}, next scheduled at: {3, date, dd-MM-yyyy HH:mm:ss.SSS}'
+      plugin.triggerHistory.triggerCompleteMessage: 'Trigger [{1}.{0}] completed firing job [{6}.{5}] with resulting trigger instruction code: {9}. Next scheduled at: {3, date, dd-MM-yyyy HH:mm:ss.SSS}'
+      plugin.triggerHistory.triggerMisfiredMessage: 'Trigger [{1}.{0}] misfired job [{6}.{5}]. Should have fired at: {3, date, dd-MM-yyyy HH:mm:ss.SSS}'
