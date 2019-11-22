@@ -49,10 +49,14 @@ TODO: Describe setting up FoD users. Preferably we should set up separate users 
 
 ## Installation and usage
 
-The utility can be built by running one of the gradlew scripts provided at the root of the
-source tree. You will need to have Java JDK 1.8 (or later?) installed. Once built, the binary
-jar file can be found in the build/libs folder, which you can copy to any location on your
-system.
+The utility can be built by running one of the following commands from the source tree 
+root directory:
+* Linux/bash: `./gradlew build -x test`
+* Linux/bash: `gradlew build -x test`
+
+You will need to have Java JDK 1.8 (or later?) installed. Once built, the binary
+jar file can be found in the build/libs folder, which you can optionally copy to 
+any location on your system.
 
 Next step is to configure the utility; following is an example configuration file:
 
