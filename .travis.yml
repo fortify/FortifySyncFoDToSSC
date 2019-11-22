@@ -13,7 +13,7 @@ stages:
 jobs:
   include:
     - stage: build
-      script: /bin/sh ./gradlew build
+      script: /bin/sh ./gradlew build -x test
 #    - stage: snapshotBranch
 #      script: /bin/sh ./gradlew "-PoverrideVersion=$TRAVIS_BRANCH" build publish artifactoryPublish -x test -Dsnapshot=true -Dbuild.number=$TRAVIS_BUILD_NUMBER
 #    - stage: releaseTag
