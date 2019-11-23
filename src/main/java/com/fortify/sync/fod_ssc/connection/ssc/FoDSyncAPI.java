@@ -71,7 +71,7 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 	
 	public final void updateSyncStatus(String sscApplicationVersionId, ScanStatus scanStatus) {
 		if ( scanStatus.isModified() ) {
-			LOG.debug("Updating sync status for application version id "+sscApplicationVersionId);
+			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
 			attributes.add("FoD Sync - Status", scanStatus.asSyncStatusString());
 			conn().api(SSCAttributeAPI.class)
