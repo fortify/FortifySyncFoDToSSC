@@ -24,18 +24,16 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
-import java.util.Date;
-
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.fortify.client.fod.api.FoDApplicationAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
-import com.fortify.client.ssc.api.SSCApplicationAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.ConfigLinkReleasesTask;
 import com.fortify.sync.fod_ssc.connection.ConnectionFactory;
@@ -45,13 +43,14 @@ import com.fortify.sync.fod_ssc.connection.ConnectionTester;
 // Only load bean if schedule is defined and not equal to '-'
 @ConditionalOnExpression("'${sync.jobs.linkReleases.schedule:-}'!='-'")
 public class LinkReleasesTask {
+	private static final Logger LOG = LoggerFactory.getLogger(LinkReleasesTask.class);
 	private final FoDAuthenticatingRestConnection fodConn;
 	private final SSCAuthenticatingRestConnection sscConn;
-	private final ConfigLinkReleasesTask config;
+	//private final ConfigLinkReleasesTask config;
 	
 	@Autowired
 	public LinkReleasesTask(ConfigLinkReleasesTask config, ConnectionFactory connFactory) {
-		this.config = config;
+		//this.config = config;
 		this.fodConn = connFactory.getFodConnection(config.getFod());
 		this.sscConn = connFactory.getSSCConnection(config.getSsc());
 	}
@@ -59,17 +58,12 @@ public class LinkReleasesTask {
 	// TODO Set schedule based on inject config, instead of directly from property?
 	@Scheduled(cron="${sync.jobs.linkReleases.schedule}")
 	public void linkReleases() {
-		printDebugMsg(config);
-		printDebugMsg(sscConn.api(SSCApplicationAPI.class).queryApplications().maxResults(1).build().getUnique());
-		printDebugMsg(fodConn.api(FoDApplicationAPI.class).queryApplications().maxResults(1).build().getUnique());
-	}
-	
-	private void printDebugMsg(Object obj) {
-		System.err.println(new Date().toString()+": "+obj);
+		LOG.debug("Running linkReleases task");
 	}
 	
 	@PostConstruct
 	public void postConstruct() {
+		LOG.debug("Testing connections to SSC and FoD for linking releases");
 		ConnectionTester.testFoDConnection(fodConn);
 		ConnectionTester.testSSCConnection(sscConn);
 		// TODO Any other tests?

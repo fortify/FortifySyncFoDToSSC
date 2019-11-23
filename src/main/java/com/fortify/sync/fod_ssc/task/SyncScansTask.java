@@ -34,6 +34,8 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -57,6 +59,7 @@ import com.fortify.util.rest.json.JSONMap;
 //Only load bean if schedule is defined and not equal to '-'
 @ConditionalOnExpression("'${sync.jobs.syncScans.schedule:-}'!='-'")
 public class SyncScansTask {
+	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private final FoDAuthenticatingRestConnection fodConn;
 	private final SSCAuthenticatingRestConnection sscConn;
@@ -69,7 +72,7 @@ public class SyncScansTask {
 	
 	@Scheduled(cron="${sync.jobs.syncScans.schedule}")
 	public void syncScans() {
-		System.out.println("Running syncScans task");
+		LOG.debug("Running syncScans task");
 		sscConn.api(FoDSyncAPI.class).processSyncedApplicationVersionsAndFoDReleases(
 				fodConn, this::processSyncedApplicationVersions);
 	}
@@ -94,9 +97,9 @@ public class SyncScansTask {
 				try {
 					// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
 					String fodReleaseId = fodRelease.get("releaseId",String.class);
-					System.out.println("Downloading "+scanType+" scan from release "+fodReleaseId);
+					LOG.info("Downloading %s scan from FoD release id %s", scanType, fodReleaseId);
 					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
-					System.out.println("Uploading "+scanType+" scan to version "+sscApplicationVersionId);
+					LOG.info("Uploading %s scan to SSC application version id %s", scanType, sscApplicationVersionId);
 					sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
 				} finally {
 					if ( tempFile.toFile().exists() ) {
@@ -121,12 +124,9 @@ public class SyncScansTask {
 		}
 	}
 	
-	private void printDebugMsg(Object obj) {
-		System.err.println(new Date().toString()+": "+obj);
-	}
-	
 	@PostConstruct
 	public void postConstruct() {
+		LOG.debug("Testing connections to SSC and FoD for synchronizing scan results");
 		ConnectionTester.testFoDConnection(fodConn);
 		ConnectionTester.testSSCConnection(sscConn);
 		// TODO Any other tests?

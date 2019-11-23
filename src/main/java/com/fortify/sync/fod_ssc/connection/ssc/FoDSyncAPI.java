@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -52,7 +54,6 @@ import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.ConfigSyncScansTask;
 import com.fortify.sync.fod_ssc.util.DefaultObjectMapperFactory;
 import com.fortify.util.rest.json.JSONMap;
-import com.fortify.util.rest.json.processor.AbstractJSONMapProcessor;
 
 import lombok.AccessLevel;
 import lombok.Data;
@@ -60,6 +61,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class FoDSyncAPI extends AbstractSSCAPI {
+	private static final Logger LOG = LoggerFactory.getLogger(FoDSyncAPI.class);
 	private static final ObjectMapper MAPPER = DefaultObjectMapperFactory.getDefaultObjectMapper();
 	private static SSCSyncedApplicationVersionFilter filter;
 	
@@ -69,7 +71,7 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 	
 	public final void updateSyncStatus(String sscApplicationVersionId, ScanStatus scanStatus) {
 		if ( scanStatus.isModified() ) {
-			System.out.println("Updating sync status for application version id "+sscApplicationVersionId);
+			LOG.debug("Updating sync status for application version id "+sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
 			attributes.add("FoD Sync - Status", scanStatus.asSyncStatusString());
 			conn().api(SSCAttributeAPI.class)
@@ -83,16 +85,14 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 			.queryApplicationVersionsByAuthEntityName(authEntityName)
 			.paramFields("id", "name", "project")
 			.onDemandAttributeValuesByName()
-			.build().processAll(new AbstractJSONMapProcessor() {
-				
-				@Override
-				public void process(JSONMap json) {
-					SyncData syncData = new SyncData(json);
-					if ( syncData.isSyncEnabled() ) {
-						consumer.accept(syncData);
-					}
-				}
-			});
+			.build().processAll(json->processSyncedApplicationVersion(consumer, json));
+	}
+
+	private void processSyncedApplicationVersion(final Consumer<SyncData> consumer, JSONMap json) {
+		SyncData syncData = new SyncData(json);
+		if ( syncData.isSyncEnabled() ) {
+			consumer.accept(syncData);
+		}
 	}
 	
 	public void processSyncedApplicationVersionsAndFoDReleases(final FoDAuthenticatingRestConnection fodConn, final BiConsumer<SyncData,JSONMap> consumer) {
@@ -147,8 +147,7 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 					result.modified = false;
 				}
 			} catch (JsonProcessingException e) {
-				// TODO Change to log statement
-				System.err.println("WARN: Sync Status cannot be parsed; FPR files will be re-synced");
+				LOG.warn("Sync Status cannot be parsed; FPR files will be re-synced");
 			}
 			return result;
 		}
@@ -166,8 +165,7 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 				return this;
 			} else {
 				if ( this.fodReleaseId!=null ) {
-					// TODO Change to log statement
-					System.err.println("WARN: Linked FoD Release Id has changed since last sync");
+					LOG.warn("Linked FoD Release Id has changed since last sync, ignoring previous scan status");
 				}
 				ScanStatus result = new ScanStatus();
 				result.setFoDReleaseId(fodReleaseId);
