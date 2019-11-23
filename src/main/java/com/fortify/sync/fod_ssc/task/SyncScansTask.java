@@ -26,11 +26,14 @@ package com.fortify.sync.fod_ssc.task;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -54,6 +57,7 @@ import com.fortify.util.rest.json.JSONMap;
 //Only load bean if schedule is defined and not equal to '-'
 @ConditionalOnExpression("'${sync.jobs.syncScans.schedule:-}'!='-'")
 public class SyncScansTask {
+	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private final FoDAuthenticatingRestConnection fodConn;
 	private final SSCAuthenticatingRestConnection sscConn;
 
@@ -71,29 +75,50 @@ public class SyncScansTask {
 	}
 	
 	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {
-		ScanStatus sscScanStatus = syncData.getScanStatus();
-		for ( String scanType : syncData.getIncludedScanTypes() ) {
-			ScanStatus newStatus = ScanStatus.parse(fodRelease);
-			Date oldScanDate = sscScanStatus.getScanDate(scanType);
-			Date newScanDate = newStatus.getScanDate(scanType);
-			if ( newScanDate!=null && (oldScanDate==null || newScanDate.after(oldScanDate)) ) {
+		String sscApplicationVersionId = syncData.getApplicationVersionId();
+		String fodReleaseId = fodRelease.get("releaseId",String.class);
+		ScanStatus scanStatus = syncData.getScanStatus().newIfDifferentFoDReleaseId(fodReleaseId);
+		String[] scanTypes = syncData.getIncludedScanTypes();
+		processSyncedApplicationVersion(sscApplicationVersionId, fodRelease, scanTypes, scanStatus);
+		sscConn.api(FoDSyncAPI.class).updateSyncStatus(sscApplicationVersionId, scanStatus);
+	}
+
+	protected void processSyncedApplicationVersion(
+			String sscApplicationVersionId, JSONMap fodRelease,
+			String[] scanTypes, ScanStatus scanStatus) {
+		for ( String scanType : scanTypes ) {
+			Date fodScanDate = getFoDScanDate(fodRelease, scanType);
+			Date oldScanDate = scanStatus.getScanDate(scanType);
+			if ( fodScanDate!=null && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
 				Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
 				try {
-					String fodReleaseId = syncData.getFodReleaseId();
+					// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
+					String fodReleaseId = fodRelease.get("releaseId",String.class);
 					System.out.println("Downloading "+scanType+" scan from release "+fodReleaseId);
 					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
-					System.out.println("Uploading "+scanType+" scan to version "+syncData.getApplicationVersionId());
-					sscConn.api(SSCArtifactAPI.class).uploadArtifact(syncData.getApplicationVersionId(), tempFile.toFile());
+					System.out.println("Uploading "+scanType+" scan to version "+sscApplicationVersionId);
+					sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
 				} finally {
 					if ( tempFile.toFile().exists() ) {
 						tempFile.toFile().delete();
 					}
 				}
-				sscScanStatus.setScanDate(scanType, newScanDate);
+				scanStatus.setScanDate(scanType, fodScanDate);
 			} 
-			
 		}
-		sscConn.api(FoDSyncAPI.class).updateSyncStatus(syncData, fodRelease);
+	}
+	
+	private static final Date getFoDScanDate(JSONMap fodRelease, String scanType) {
+		return parseFoDDate(fodRelease.get(scanType.toLowerCase()+"ScanDate", String.class));
+	}
+	
+	private static final Date parseFoDDate(String dateString) {
+		if ( dateString == null ) { return null; }
+		try {
+			return FMT_FOD_DATE.parse(StringUtils.substringBefore(dateString, "."));
+		} catch ( ParseException e ) {
+			throw new RuntimeException("Error parsing scan date "+dateString+" returned by FoD", e);
+		}
 	}
 	
 	private void printDebugMsg(Object obj) {

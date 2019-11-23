@@ -24,9 +24,10 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.connection.ssc;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -38,6 +39,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fortify.client.fod.api.FoDReleaseAPI;
@@ -51,28 +54,26 @@ import com.fortify.sync.fod_ssc.util.DefaultObjectMapperFactory;
 import com.fortify.util.rest.json.JSONMap;
 import com.fortify.util.rest.json.processor.AbstractJSONMapProcessor;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 public class FoDSyncAPI extends AbstractSSCAPI {
+	private static final ObjectMapper MAPPER = DefaultObjectMapperFactory.getDefaultObjectMapper();
 	private static SSCSyncedApplicationVersionFilter filter;
 	
 	public FoDSyncAPI(SSCAuthenticatingRestConnection conn) {
 		super(conn);
 	}
 	
-	public void updateSyncStatus(SyncData syncData, JSONMap fodRelease) {
-		ScanStatus oldStatus = syncData.getScanStatus();
-		// TODO We should only copy properties from fodRelease for which we actually processed a scan
-		//      Otherwise if we temporarily disable a scan type, it won't be uploaded 
-		//      once we re-enable that scan type, until a new scan of that type is 
-		//      available on FoD
-		ScanStatus newStatus = ScanStatus.parse(fodRelease);
-		if ( newStatus!=null && !newStatus.equals(oldStatus) ) {
-			String applicationVersionId = syncData.getApplicationVersionId();
+	public final void updateSyncStatus(String sscApplicationVersionId, ScanStatus scanStatus) {
+		if ( scanStatus.isModified() ) {
+			System.out.println("Updating sync status for application version id "+sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
-			attributes.add("FoD Sync - Status", newStatus.asSyncStatusString());
+			attributes.add("FoD Sync - Status", scanStatus.asSyncStatusString());
 			conn().api(SSCAttributeAPI.class)
-				.updateApplicationVersionAttributes(applicationVersionId, attributes);
+				.updateApplicationVersionAttributes(sscApplicationVersionId, attributes);
 		}
 	}
 	
@@ -107,19 +108,10 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 			.build().getUnique();
 		consumer.accept(syncData, fodRelease);
 	}
-
-	@FunctionalInterface
-	public static interface ISSCSyncDataAndFoDReleaseProcessor {
-		public void process(SyncData sscSyncData, JSONMap fodRelease);
-	}
-
-	@FunctionalInterface
-	public static interface ISSCSyncDataProcessor {
-		public void process(SyncData syncData);
-	}
 	
 	@Data
 	public static final class SyncData {
+		// TODO add application/version name?
 		private String applicationVersionId;
 		private String fodReleaseId;
 		private String[] includedScanTypes;
@@ -131,7 +123,7 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 			JSONMap attributeValuesByName = json.get("attributeValuesByName", JSONMap.class);
 			this.fodReleaseId = attributeValuesByName.get("FoD Sync - Release Id", String.class);
 			this.includedScanTypes = attributeValuesByName.getOrCreateJSONList("FoD Sync - Include Scan Types").toArray(new String[]{});
-			this.scanStatus = ScanStatus.parse(this.fodReleaseId, attributeValuesByName.get("FoD Sync - Status", String.class));
+			this.scanStatus = ScanStatus.parse(attributeValuesByName.get("FoD Sync - Status", String.class));
 		}
 		
 		public boolean isSyncEnabled() {
@@ -142,45 +134,21 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 	
 	@Data
 	public static final class ScanStatus {
-		private static final SimpleDateFormat FMT_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		private static final ObjectMapper MAPPER = DefaultObjectMapperFactory.getDefaultObjectMapper();
-		private String releaseId;
-		private Date staticScanDate;
-		private Date dynamicScanDate;
-		private Date mobileScanDate;
-
-		public ScanStatus() {}
+		@JsonProperty private String fodReleaseId;
+		@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) 
+		@JsonProperty private Map<String,Date> scanDates = new HashMap<>();
+		@JsonIgnore private boolean modified;
 		
-		public static final ScanStatus parse(JSONMap fodRelease) {
-			ScanStatus result = new ScanStatus();
-			result.releaseId = fodRelease.get("releaseId", String.class);
-			result.staticScanDate = parseFoDDate(fodRelease.get("staticScanDate", String.class));
-			result.dynamicScanDate = parseFoDDate(fodRelease.get("dynamicScanDate", String.class));
-			result.mobileScanDate = parseFoDDate(fodRelease.get("mobileScanDate", String.class));
-			return result;
-		}
-		
-		private static final Date parseFoDDate(String dateString) {
-			if ( dateString == null ) { return null; }
-			try {
-				return FMT_DATE.parse(StringUtils.substringBefore(dateString, "."));
-			} catch ( ParseException e ) {
-				throw new RuntimeException("Error parsing scan date "+dateString+" returned by FoD", e);
-			}
-		}
-		
-		public static final ScanStatus parse(String currentReleaseId, String syncStatusString) {
+		public static final ScanStatus parse(String syncStatusString) {
 			ScanStatus result = new ScanStatus();
 			try {
 				if ( StringUtils.isNotBlank(syncStatusString) ) {
 					result = MAPPER.readerForUpdating(result).readValue(syncStatusString);
+					result.modified = false;
 				}
 			} catch (JsonProcessingException e) {
-				throw new RuntimeException("Exception parsing FoD sync status", e);
-			}
-			if (result == null || currentReleaseId==null || !currentReleaseId.equals(result.releaseId)) {
-				// Reset sync status if release id has changed
-				result = new ScanStatus();
+				// TODO Change to log statement
+				System.err.println("WARN: Sync Status cannot be parsed; FPR files will be re-synced");
 			}
 			return result;
 		}
@@ -192,22 +160,36 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 				throw new RuntimeException("Exception generating FoD sync status string", e);
 			}
 		}
-
-		public final Date getScanDate(String scanType) {
-			switch (scanType.toLowerCase()) {
-			case "static": return getStaticScanDate();
-			case "dynamic": return getDynamicScanDate();
-			case "mobile": return getMobileScanDate();
-			default: throw new RuntimeException("Unknown scan type "+scanType);
+		
+		public final ScanStatus newIfDifferentFoDReleaseId(String fodReleaseId) {
+			if ( Objects.equals(this.fodReleaseId, fodReleaseId) ) {
+				return this;
+			} else {
+				if ( this.fodReleaseId!=null ) {
+					// TODO Change to log statement
+					System.err.println("WARN: Linked FoD Release Id has changed since last sync");
+				}
+				ScanStatus result = new ScanStatus();
+				result.setFoDReleaseId(fodReleaseId);
+				return result;
+			}
+		}
+		
+		public final void setFoDReleaseId(String fodReleaseId) {
+			if ( !Objects.equals(this.fodReleaseId, fodReleaseId) ) {
+				this.modified = true;
+				this.fodReleaseId = fodReleaseId;
 			}
 		}
 
+		public final Date getScanDate(String scanType) {
+			return this.scanDates.get(scanType.toLowerCase());
+		}
+
 		public void setScanDate(String scanType, Date scanDate) {
-			switch (scanType.toLowerCase()) {
-			case "static": setStaticScanDate(scanDate); break;
-			case "dynamic": setDynamicScanDate(scanDate); break;
-			case "mobile": setMobileScanDate(scanDate); break;
-			default: throw new RuntimeException("Unknown scan type "+scanType);
+			if ( !Objects.equals(getScanDate(scanType), scanDate)) {
+				this.modified = true;
+				this.scanDates.put(scanType.toLowerCase(), scanDate);
 			}
 		}
 	}
