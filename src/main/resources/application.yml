@@ -3,6 +3,10 @@
 # store configuration data
 #spring.datasource.url=jdbc:h2:${fortify.home:~/.fortify}/fod-ssc-sync/config;DB_CLOSE_ON_EXIT=FALSE
 
+logging:
+  level:
+    com.fortify.sync.fod_ssc: DEBUG
+
 spring:
   quartz: ## QuartzProperties
     job-store-type: memory
