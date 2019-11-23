@@ -97,9 +97,9 @@ public class SyncScansTask {
 				try {
 					// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
 					String fodReleaseId = fodRelease.get("releaseId",String.class);
-					LOG.info("Downloading %s scan from FoD release id %s", scanType, fodReleaseId);
+					LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
 					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
-					LOG.info("Uploading %s scan to SSC application version id %s", scanType, sscApplicationVersionId);
+					LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
 					sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
 				} finally {
 					if ( tempFile.toFile().exists() ) {
