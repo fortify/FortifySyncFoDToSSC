@@ -24,17 +24,38 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
+import org.assertj.core.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
+import com.fortify.client.fod.api.FoDApplicationAPI;
+import com.fortify.client.fod.api.FoDReleaseAPI;
+import com.fortify.client.fod.api.query.builder.FoDApplicationsQueryBuilder;
+import com.fortify.client.fod.api.query.builder.FoDReleasesQueryBuilder;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
+import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
+import com.fortify.client.ssc.api.SSCApplicationVersionAPI.CreateApplicationVersionBuilder;
+import com.fortify.client.ssc.api.SSCAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
-import com.fortify.sync.fod_ssc.config.ConfigLinkReleasesTask;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigApplicationFilters;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigAutoCreate;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigReleaseFilters;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.OrderBy;
 import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
+import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI;
+import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI.LinkedVersionsAndReleasesIds;
+import com.fortify.util.rest.json.JSONMap;
+import com.fortify.util.rest.json.preprocessor.enrich.JSONMapEnrichWithValue;
+import com.fortify.util.rest.json.preprocessor.filter.AbstractJSONMapFilter.MatchMode;
+import com.fortify.util.rest.json.preprocessor.filter.JSONMapFilterSpEL;
+import com.fortify.util.spring.expression.SimpleExpression;
 
 @Component
 // Only load bean if schedule is defined and not equal to '-'
@@ -43,11 +64,11 @@ public class LinkReleasesTask {
 	private static final Logger LOG = LoggerFactory.getLogger(LinkReleasesTask.class);
 	private final FoDAuthenticatingRestConnection fodConn;
 	private final SSCAuthenticatingRestConnection sscConn;
-	//private final ConfigLinkReleasesTask config;
+	private final LinkReleasesTaskConfig config;
 	
 	@Autowired
-	public LinkReleasesTask(ConfigLinkReleasesTask config, ConnectionHolder connFactory) {
-		//this.config = config;
+	public LinkReleasesTask(LinkReleasesTaskConfig config, ConnectionHolder connFactory) {
+		this.config = config;
 		this.fodConn = connFactory.getFodConnection();
 		this.sscConn = connFactory.getSscConnection();
 	}
@@ -56,5 +77,110 @@ public class LinkReleasesTask {
 	@Scheduled(cron="${sync.jobs.linkReleases.schedule}")
 	public void linkReleases() {
 		LOG.debug("Running linkReleases task");
+		new FoDUnlinkedReleasesProcessor().processFoDApplications();
 	}
+
+	private final class FoDUnlinkedReleasesProcessor {
+		private final LinkedVersionsAndReleasesIds linkedVersionsAndReleasesIds = sscConn.api(FoDSyncAPI.class).getLinkedVersionsAndReleasesIds();
+		
+		private void processFoDApplications() {
+			LOG.debug("Loading applications");
+			ConfigApplicationFilters applicationFilters = config.getFod().getFilters().getApplication();
+			FoDApplicationsQueryBuilder qb = fodConn.api(FoDApplicationAPI.class).queryApplications()
+					.onDemandAll()
+					.paramFilterAnd(applicationFilters.getFodFilterParam());
+			if ( applicationFilters.getFilterExpressions()!=null ) {
+				// TODO qb.paramFields(<id + name + all fields referenced by filter expressions>) 
+				for ( SimpleExpression expr : applicationFilters.getFilterExpressions()) {
+					qb.preProcessor(new JSONMapFilterSpEL(MatchMode.INCLUDE, expr));
+				}
+			}
+			qb.build().processAll(this::processFoDApplication);
+		}
+		
+		private void processFoDApplication(JSONMap application) {
+			ConfigReleaseFilters releaseFilters = config.getFod().getFilters().getRelease();
+			FoDReleasesQueryBuilder qb = fodConn.api(FoDReleaseAPI.class).queryReleases()
+				.paramFilterAnd("applicationId", application.get("applicationId", String.class))
+				.paramFilterAnd(releaseFilters.getFodFilterParam())
+				.preProcessor(new JSONMapEnrichWithValue("application", application))
+				.preProcessor(release->!linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)));
+			OrderBy onlyFirst = releaseFilters.getOnlyFirst();
+			if ( onlyFirst!=null ) {
+				qb.maxResults(1)
+					.paramOrderBy(onlyFirst.getOrderBy(), onlyFirst.getDirection());
+			}
+			if ( releaseFilters.getFilterExpressions()!=null ) {
+				// TODO qb.paramFields(<id + name + fields referenced by filter expressions>) 
+				for ( SimpleExpression expr : releaseFilters.getFilterExpressions()) {
+					qb.preProcessor(new JSONMapFilterSpEL(MatchMode.INCLUDE, expr));
+				}
+			}
+			qb.build().processAll(this::processUnlinkedFoDRelease);
+		}
+	
+		private void processUnlinkedFoDRelease(JSONMap release) {
+			String fodApplicationName = release.getPath("application.applicationName", String.class);
+			String fodReleaseName = release.getPath("releaseName", String.class);
+			LOG.debug("Processing unlinked FoD release {}:{}", release.getPath("application.applicationName",String.class), release.getPath("releaseName",String.class));
+			
+			JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseName, false);
+			if ( sscApplicationVersion==null ) {
+				processprocessUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(release);
+			} else {
+				processprocessUnlinkedFoDReleaseWithMatchingSSCApplicationVersion(release, sscApplicationVersion);
+			}
+		}
+
+		private void processprocessUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(JSONMap release) {
+			ConfigAutoCreate autoCreateVersionsConfig = config.getSsc().getAutoCreateVersions();
+			String fodApplicationName = release.getPath("application.applicationName", String.class);
+			String fodReleaseName = release.getPath("releaseName", String.class);
+			String fodReleaseId = release.get("releaseId", String.class);
+			
+			if ( !autoCreateVersionsConfig.isEnabled() ) {
+				LOG.debug("SSC application version creation disabled; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
+			} else {
+				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
+	
+				CreateApplicationVersionBuilder createVersionBuilder = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
+					.applicationName(fodApplicationName).versionName(fodReleaseName)
+					.versionDescription("Automatically created for FoD Release")
+					.autoAddRequiredAttributes(true)
+					// TODO Remove duplication with #getAttributesMap
+					// TODO Get all allowed options for 'Include Scan Types' from SSC
+					// TODO Get default issue template from SSC, allow override in config?
+					.attribute("FoD Sync - Release Id", fodReleaseId)
+					.issueTemplateName(autoCreateVersionsConfig.getIssueTemplateName());
+				
+				for (String scanType : autoCreateVersionsConfig.getEnabledScanTypes()) {
+					createVersionBuilder.attribute("FoD Sync - Include Scan Types", scanType);
+				}
+				
+				createVersionBuilder.execute();
+			}
+		}
+
+		private void processprocessUnlinkedFoDReleaseWithMatchingSSCApplicationVersion(JSONMap release, JSONMap sscApplicationVersion) {
+			String fodReleaseId = release.get("releaseId", String.class);
+			String sscApplicationVersionId = sscApplicationVersion.get("id", String.class);
+			if ( linkedVersionsAndReleasesIds.getLinkedSSCApplicationVersionIds().contains(sscApplicationVersionId)) {
+				LOG.warn("SSC application version id %s matches FoD release id %s, but release is already linked to another SSC version",
+					sscApplicationVersionId, fodReleaseId);
+			} else {
+				LOG.debug("Linking existing SSC application version id {} to FoD release id {}", sscApplicationVersionId, fodReleaseId);
+				sscConn.api(SSCAttributeAPI.class).updateApplicationVersionAttributes(
+						sscApplicationVersionId, getAttributesMap(fodReleaseId));
+			}
+			
+		}
+
+		private MultiValueMap<String, Object> getAttributesMap(String fodReleaseId) {
+			MultiValueMap<String,Object> attributes = new LinkedMultiValueMap<>();
+			attributes.add("FoD Sync - Release Id", fodReleaseId);
+			attributes.addAll("FoD Sync - Include Scan Types", Arrays.asList(config.getSsc().getAutoCreateVersions().getEnabledScanTypes()));
+			return attributes;
+		}
+	}
+	
 }

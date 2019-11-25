@@ -26,8 +26,10 @@ package com.fortify.sync.fod_ssc.connection.ssc;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -55,7 +57,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-public class FoDSyncAPI extends AbstractSSCAPI {
+public final class FoDSyncAPI extends AbstractSSCAPI {
 	private static final Logger LOG = LoggerFactory.getLogger(FoDSyncAPI.class);
 	private static final ObjectMapper MAPPER = DefaultObjectMapperFactory.getDefaultObjectMapper();
 	
@@ -73,23 +75,31 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 		}
 	}
 	
-	public void processSyncedApplicationVersions(final Consumer<SyncData> consumer) {
+	public final void processSyncedApplicationVersions(final Consumer<JSONMap> consumer, String... applicationVersionFields) {
 		conn().api(SSCApplicationVersionAPI.class)
 			.queryApplicationVersions()
-			.paramFields("id", "name", "project")
+			.paramFields(applicationVersionFields)
 			.onDemandAttributeValuesByName()
-			.build().processAll(json->processSyncedApplicationVersion(consumer, json));
+			.preProcessor(this::hasFoDReleaseId)
+			.build().processAll(consumer);
 	}
-
-	private void processSyncedApplicationVersion(final Consumer<SyncData> consumer, JSONMap json) {
-		SyncData syncData = new SyncData(json);
-		if ( syncData.isSyncEnabled() ) {
-			consumer.accept(syncData);
-		}
+	
+	public final LinkedVersionsAndReleasesIds getLinkedVersionsAndReleasesIds() {
+		final LinkedVersionsAndReleasesIds result = new LinkedVersionsAndReleasesIds();
+		processSyncedApplicationVersions(result::add, "id");
+		return result;
+	}
+	
+	public final void processSyncData(final Consumer<SyncData> consumer, String... applicationVersionFields) {
+		processSyncedApplicationVersions(json->consumer.accept(new SyncData(json)), "id");
+	}
+	
+	private final boolean hasFoDReleaseId(JSONMap json) {
+		return StringUtils.isNotBlank(getLinkedFoDReleaseId(json));
 	}
 	
 	public void processSyncedApplicationVersionsAndFoDReleases(final FoDAuthenticatingRestConnection fodConn, final BiConsumer<SyncData,JSONMap> consumer) {
-		processSyncedApplicationVersions(syncData->processSyncedApplicationVersionsAndFoDReleases(fodConn, syncData, consumer));
+		processSyncData(syncData->processSyncedApplicationVersionsAndFoDReleases(fodConn, syncData, consumer));
 	}
 	
 	private void processSyncedApplicationVersionsAndFoDReleases(final FoDAuthenticatingRestConnection fodConn, final SyncData syncData, final BiConsumer<SyncData,JSONMap> consumer) {
@@ -183,5 +193,20 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 				this.scanDates.put(scanType.toLowerCase(), scanDate);
 			}
 		}
+	}
+	
+	@Data
+	public static final class LinkedVersionsAndReleasesIds {
+		private final Set<String> linkedSSCApplicationVersionIds = new HashSet<>();
+		private final Set<String> linkedFoDReleaseIds = new HashSet<>();
+		
+		public void add(JSONMap json) {
+			linkedFoDReleaseIds.add(getLinkedFoDReleaseId(json));
+			linkedSSCApplicationVersionIds.add(json.getPath("id", String.class));
+		}
+	}
+	
+	private static final String getLinkedFoDReleaseId(JSONMap json) {
+		return json.getPath("attributeValuesByName['FoD Sync - Release Id']", String.class);
 	}
 }

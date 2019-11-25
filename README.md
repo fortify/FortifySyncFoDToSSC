@@ -2,9 +2,14 @@
 
 ### WORK IN PROGRESS, NOT YET FUNCTIONAL
 
-Once completed, this utility can be used to automatically synchronize scan results from FoD to SSC.
-At the moment, only manual sync is working but not properly tested.
+This is still work in progress, but basic functionality should be working. 
 
+## To-do's
+
+* Major cleanup of code, in particular for link releases task
+* Much more testing
+* Performance improvements (avoid duplicate requests, use bulk requests, ...)
+* More configuration options, more functionality
 
 ## SSC Preparations
 
@@ -83,11 +88,22 @@ sync:
       fod:
         filters:
           application:
-            test: abc
+            fodFilterParam:
+            filterExpressions:
+            # Filter based on custom FoD boolean attribute
+            - attributesMap['SyncWithSSC'] == 'True'
+            #  - applicationName == 'wg'
           release:
-            test: abc
+            fodFilterParam:
+            #filterExpressions:
+            #  - releaseName matches '5.0'
+            onlyFirst:
+              orderBy: releaseCreatedDate
+              direction: DESC
       ssc:
-        autoCreateVersions: true
+        enabled: true
+        enabledScanTypes: Static
+        issueTemplateName: Prioritized High Risk Issue Template
 ```
 
 The `schedule` property is in extended cron format, using 6 fields to specify

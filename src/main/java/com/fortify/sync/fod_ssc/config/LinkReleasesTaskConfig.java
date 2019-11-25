@@ -24,10 +24,13 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
+import com.fortify.client.fod.api.query.builder.FoDOrderByDirection;
+import com.fortify.util.spring.expression.SimpleExpression;
+
 import lombok.Data;
 
 @Data
-public class ConfigLinkReleasesTask {
+public class LinkReleasesTaskConfig {
 	private boolean enabled = false;
 	private String schedule = "0 0 1 * * *"; // Currently not used, as task references property directly
 	private ConfigJobLinkReleasesFoD fod = new ConfigJobLinkReleasesFoD();
@@ -38,19 +41,33 @@ public class ConfigLinkReleasesTask {
     }
     
     @Data public static class ConfigJobLinkReleasesSSC {
-    	private boolean autoCreateVersions;
+    	private ConfigAutoCreate autoCreateVersions = new ConfigAutoCreate();
     }
     
     @Data public static class ConfigFoDFilters {
-    	private ConfigFoDApplicationFilters application = new ConfigFoDApplicationFilters();
-    	private ConfigFoDReleaseFilters release = new ConfigFoDReleaseFilters();
+    	private ConfigApplicationFilters application = new ConfigApplicationFilters();
+    	private ConfigReleaseFilters release = new ConfigReleaseFilters();
     } 
     
-    @Data public static class ConfigFoDReleaseFilters {
-    	private String test;
+    @Data public static class ConfigApplicationFilters {
+    	private String fodFilterParam;
+    	private SimpleExpression[] filterExpressions;
     } 
     
-    @Data public static class ConfigFoDApplicationFilters {
-    	private String test;
+    @Data public static class ConfigReleaseFilters {
+    	private String fodFilterParam;
+    	private SimpleExpression[] filterExpressions;
+    	private OrderBy onlyFirst; 
     } 
+    
+    @Data public static class OrderBy {
+    	private String orderBy;
+    	private FoDOrderByDirection direction;
+    }
+
+    @Data public static class ConfigAutoCreate {
+    	private boolean enabled = false;
+    	private String issueTemplateName = "Prioritized High Risk Issue Template";
+    	private String[] enabledScanTypes = new String[] {"Static", "Dynamic"};
+	}
 }

@@ -27,7 +27,7 @@ package com.fortify.sync.fod_ssc.config;
 import lombok.Data;
 
 @Data
-public class ConfigSyncScansTask {
+public class SyncScansTaskConfig {
 	private boolean enabled = false;
 	private String schedule = "0 0 * * * *"; // Currently not used, as task references property directly
 }

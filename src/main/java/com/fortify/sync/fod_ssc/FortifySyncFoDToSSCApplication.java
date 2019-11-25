@@ -12,8 +12,8 @@ import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection.FoDAuthenticatingRestConnectionBuilder;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection.SSCAuthenticatingRestConnectionBuilder;
-import com.fortify.sync.fod_ssc.config.ConfigLinkReleasesTask;
-import com.fortify.sync.fod_ssc.config.ConfigSyncScansTask;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
+import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 
 @SpringBootApplication
 @EnableScheduling
@@ -49,24 +49,24 @@ public class FortifySyncFoDToSSCApplication {
 	
 	@Bean
 	@ConfigurationProperties("sync.jobs.link-releases")
-	public ConfigLinkReleasesTask configLinkReleasesTask() {
-		return new ConfigLinkReleasesTask();
+	public LinkReleasesTaskConfig configLinkReleasesTask() {
+		return new LinkReleasesTaskConfig();
 	}
 	
 	@Bean
 	@ConfigurationProperties("sync.jobs.sync-scans")
-	public ConfigSyncScansTask configSyncScansTask() {
-		return new ConfigSyncScansTask();
+	public SyncScansTaskConfig configSyncScansTask() {
+		return new SyncScansTaskConfig();
 	}
 	
 	
 	@Bean
 	public FoDAuthenticatingRestConnection fodConnection() {
-		return fodConnectionBuilder().build();
+		return fodConnectionBuilder().useCache(false).build();
 	}
 	
 	@Bean
 	public SSCAuthenticatingRestConnection sscConnection() {
-		return sscConnectionBuilder().build();
+		return sscConnectionBuilder().useCache(false).build();
 	}
 }

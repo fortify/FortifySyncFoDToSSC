@@ -44,7 +44,7 @@ import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCArtifactAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.Constants;
-import com.fortify.sync.fod_ssc.config.ConfigSyncScansTask;
+import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
 import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI;
 import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI.ScanStatus;
@@ -62,7 +62,7 @@ public class SyncScansTask {
 	private final SSCAuthenticatingRestConnection sscConn;
 
 	@Autowired
-	public SyncScansTask(ConfigSyncScansTask config, ConnectionHolder connFactory) {
+	public SyncScansTask(SyncScansTaskConfig config, ConnectionHolder connFactory) {
 		this.fodConn = connFactory.getFodConnection();
 		this.sscConn = connFactory.getSscConnection();
 	}
@@ -89,6 +89,7 @@ public class SyncScansTask {
 		for ( String scanType : scanTypes ) {
 			Date fodScanDate = getFoDScanDate(fodRelease, scanType);
 			Date oldScanDate = scanStatus.getScanDate(scanType);
+			LOG.debug("Scan type {}: current scan date {}, previous scan date {}", scanType, fodScanDate, oldScanDate);
 			if ( fodScanDate!=null && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
 				Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
 				try {
