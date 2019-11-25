@@ -60,6 +60,10 @@ sync:
       tenant: {FoD tenant}
       userName: {FoD user}
       password: {FoD password or PAT}
+      #proxy:
+      #  url: {proxy URL}
+      #  userName: {optional proxy user}
+      #  password: {password for proxy user}
     ssc:
       baseUrl: {SSC URL}
       userName: {SSC user}
