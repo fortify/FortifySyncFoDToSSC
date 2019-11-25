@@ -24,8 +24,6 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
-import javax.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +34,7 @@ import org.springframework.stereotype.Component;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.ConfigLinkReleasesTask;
-import com.fortify.sync.fod_ssc.connection.ConnectionFactory;
-import com.fortify.sync.fod_ssc.connection.ConnectionTester;
+import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
 
 @Component
 // Only load bean if schedule is defined and not equal to '-'
@@ -49,23 +46,15 @@ public class LinkReleasesTask {
 	//private final ConfigLinkReleasesTask config;
 	
 	@Autowired
-	public LinkReleasesTask(ConfigLinkReleasesTask config, ConnectionFactory connFactory) {
+	public LinkReleasesTask(ConfigLinkReleasesTask config, ConnectionHolder connFactory) {
 		//this.config = config;
-		this.fodConn = connFactory.getFodConnection(config.getFod());
-		this.sscConn = connFactory.getSSCConnection(config.getSsc());
+		this.fodConn = connFactory.getFodConnection();
+		this.sscConn = connFactory.getSscConnection();
 	}
 	
 	// TODO Set schedule based on inject config, instead of directly from property?
 	@Scheduled(cron="${sync.jobs.linkReleases.schedule}")
 	public void linkReleases() {
 		LOG.debug("Running linkReleases task");
-	}
-	
-	@PostConstruct
-	public void postConstruct() {
-		LOG.debug("Testing connections to SSC and FoD for linking releases");
-		ConnectionTester.testFoDConnection(fodConn);
-		ConnectionTester.testSSCConnection(sscConn);
-		// TODO Any other tests?
 	}
 }

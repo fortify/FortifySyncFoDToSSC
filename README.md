@@ -18,34 +18,26 @@ The following SSC preparations are required to use this utility:
         * ~~Mobile~~ (Currently not supported by FoD API)
     * FoD Sync - Status: Text - Multiple Lines, Hidden
     
-* Define a role 'FoD Sync - Releases' WITH universal access, with the following permissions:
-    * Add application versions
-    * Delete application versions? (do we want to auto-delete if release in FoD is deleted?)
-    * Edit application versions? (do we need this to set custom attributes, access, ... while creating app version?)
-    * Manage application version access? (do we need this if we specify users while creating version?)
-    * Manage attribute definitions: to auto-create FoD Sync-related attributes
-    * View application versions
-    * View attribute definitions
-    * View issue templates, process templates, ... (is this necessary to determine default issue template?)
+* Define the user account to be used by the utility to connect with SSC. This user must
+  have a role with the following permissions:
     
-* Define a role 'FoD Sync - Scans' WITHOUT universal access, with the following permissions: 
-    * Approve analysis results upload? (do we want to auto-approve?)
-    * Edit application versions? (do we need this to update sync status attribute?)
+    * Universal access
+    * Add application versions
+    * ~~Approve analysis results upload? (do we want to auto-approve?)~~
+    * ~~Delete application versions? (do we want to auto-delete if release in FoD is deleted?)~~
+    * Edit application versions? (do we need this to set custom attributes, access, ... while creating app version?)
+    * ~~Manage application version access? (do we need this if we specify users while creating version?)~~
+    * ~~Manage attribute definitions: to auto-create FoD Sync-related attributes~~ (not yet implemented)
     * Upload analysis results
     * View application versions
     * View attribute definitions
-
-* Define local or LDAP user 'FoD Sync - Releases' with the corresponding 'FoD Sync- Release' role
-
-* Define local or LDAP user 'FoD Sync - Scans' with the corresponding 'FoD Sync- Release' role
-
-_Notes:_
-* Role and user names are just examples; the utility allows for configuring the user names and corresponding passwords to be used for SSC authentication.
-* Potentially you could combine both roles into a single role, and define a single user to be used by both tasks. This has not been tested though, and may have a negative impact on functionality or performance.
+    * View issue templates, process templates, ... (is this necessary to determine default issue template?)
 
 ## FoD Preparations
 
-TODO: Describe setting up FoD users. Preferably we should set up separate users for the `Link Releases` and `Sync Scans` tasks, to avoid the two tasks impacting each other if FoD rate limiting is triggered.
+The following SSC preparations are required to use this utility:
+
+* Define the user account to be used by the utility to connect with FoD. This user have permissions to view all applications and releases.
 
 ## Installation and usage
 
@@ -64,33 +56,26 @@ Next step is to configure the utility; following is an example configuration fil
 sync:
   connections:
     fod:
-      baseUrl: https://api.emea.fortify.com
-      tenant: mytenant
+      baseUrl: https://api.{region}.fortify.com
+      tenant: {FoD tenant}
+      userName: {FoD user}
+      password: {FoD password or PAT}
     ssc:
-      baseUrl: https://ssc.my.org/ssc
+      baseUrl: {SSC URL}
+      userName: {SSC user}
+      password: {SSC password}
   jobs:
     syncScans:
-      schedule: '*/5 * * * * *' # We run the task every 5 seconds for testing
-      # schedule: '0 0 */1 * * *'
-      fod:
-        userName: FoDUserForSyncingScans
-        password: FoDPasswordOrPAT
-      ssc:
-        userName: SSCUserForSyncingScans
-        password: SSCPassword
+      schedule: '*/5 * * * * *'
     linkReleases:
       schedule: '0 0 */2 * * *'
       fod:
-        userName: FoDUserForLinkingReleases
-        password: FoDPasswordOrPAT
         filters:
           application:
             test: abc
           release:
             test: abc
       ssc:
-        userName: SSCUserForLinkingReleases
-        password: SSCPassword
         autoCreateVersions: true
 ```
 
@@ -127,8 +112,7 @@ Perform the following steps in order to set up a manual mapping for synchronizin
 * Create a new SSC application version, or edit an existing application version that is not being synchronized yet
 * On the 'Organization Attributes' page:
     * Set the FoD release id that this application version should be synchronized with
-    * Select one or more scan result types that should be synchronized
-* On the 'Access' page, add the 'FoD Sync - Scans' user  
+    * Select one or more scan result types that should be synchronized 
 
 ## Disable a mapping
 

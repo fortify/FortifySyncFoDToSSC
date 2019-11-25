@@ -24,32 +24,20 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
-
-import com.fortify.sync.fod_ssc.connection.fod.IConfigFoDCredentials;
-import com.fortify.sync.fod_ssc.connection.ssc.IConfigSSCCredentials;
-
 import lombok.Data;
 
-@Data @Component("configLinkReleases")
-@ConfigurationProperties("sync.jobs.link-releases")
+@Data
 public class ConfigLinkReleasesTask {
 	private boolean enabled = false;
 	private String schedule = "0 0 1 * * *"; // Currently not used, as task references property directly
 	private ConfigJobLinkReleasesFoD fod = new ConfigJobLinkReleasesFoD();
 	private ConfigJobLinkReleasesSSC ssc = new ConfigJobLinkReleasesSSC();
 	
-    @Data public static class ConfigJobLinkReleasesFoD implements IConfigFoDCredentials {
-    	private String userName;
-    	private String password;
+    @Data public static class ConfigJobLinkReleasesFoD {
     	private ConfigFoDFilters filters = new ConfigFoDFilters(); 
     }
     
-    @Data public static class ConfigJobLinkReleasesSSC implements IConfigSSCCredentials {
-    	private String userName;
-    	private String password;
-    	private String authToken;
+    @Data public static class ConfigJobLinkReleasesSSC {
     	private boolean autoCreateVersions;
     }
     

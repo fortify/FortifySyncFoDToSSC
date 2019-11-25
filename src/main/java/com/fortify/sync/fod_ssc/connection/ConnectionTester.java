@@ -24,14 +24,19 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.connection;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 
+@Component
 public class ConnectionTester {
 	
-	public static final void testFoDConnection(FoDAuthenticatingRestConnection conn) {
+	@Autowired
+	public final void testFoDConnection(FoDAuthenticatingRestConnection conn) {
 		conn.api(FoDReleaseAPI.class)
 			.queryReleases()
 			.maxResults(1)
@@ -39,7 +44,8 @@ public class ConnectionTester {
 			.build().getUnique();
 	}
 
-	public static final void testSSCConnection(SSCAuthenticatingRestConnection conn) {
+	@Autowired
+	public final void testSSCConnection(SSCAuthenticatingRestConnection conn) {
 		conn.api(SSCApplicationVersionAPI.class)
 			.queryApplicationVersions()
 			.maxResults(1)

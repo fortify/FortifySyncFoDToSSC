@@ -24,30 +24,10 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
-
-import com.fortify.sync.fod_ssc.connection.fod.IConfigFoDCredentials;
-import com.fortify.sync.fod_ssc.connection.ssc.IConfigSSCCredentials;
-
 import lombok.Data;
 
-@Data @Component("configSyncScans") 
-@ConfigurationProperties("sync.jobs.sync-scans")
+@Data
 public class ConfigSyncScansTask {
 	private boolean enabled = false;
 	private String schedule = "0 0 * * * *"; // Currently not used, as task references property directly
-	private ConfigJobSyncScansFoD fod;
-	private ConfigJobSyncScansSSC ssc;
-	
-	@Data public static class ConfigJobSyncScansFoD implements IConfigFoDCredentials {
-    	private String userName;
-    	private String password;
-    }
-    
-    @Data public static class ConfigJobSyncScansSSC implements IConfigSSCCredentials {
-    	private String userName;
-    	private String password;
-    	private String authToken;
-    }
 }

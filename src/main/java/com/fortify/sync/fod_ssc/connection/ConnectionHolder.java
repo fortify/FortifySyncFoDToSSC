@@ -22,10 +22,24 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
  * IN THE SOFTWARE.
  ******************************************************************************/
-package com.fortify.sync.fod_ssc.connection.fod;
+package com.fortify.sync.fod_ssc.connection;
 
-import com.fortify.sync.fod_ssc.connection.IConfigUserNamePassword;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-public interface IConfigFoDCredentials extends IConfigUserNamePassword {
+import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
+import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 
+import lombok.Data;
+
+@Component @Data
+public class ConnectionHolder {
+	private final FoDAuthenticatingRestConnection fodConnection;
+	private final SSCAuthenticatingRestConnection sscConnection;
+
+	@Autowired 
+	public ConnectionHolder(FoDAuthenticatingRestConnection fodConnection, SSCAuthenticatingRestConnection sscConnection) {
+		this.fodConnection = fodConnection;
+		this.sscConnection = sscConnection;
+	}
 }

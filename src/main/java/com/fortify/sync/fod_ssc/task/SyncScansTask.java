@@ -31,8 +31,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,8 +45,7 @@ import com.fortify.client.ssc.api.SSCArtifactAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.Constants;
 import com.fortify.sync.fod_ssc.config.ConfigSyncScansTask;
-import com.fortify.sync.fod_ssc.connection.ConnectionFactory;
-import com.fortify.sync.fod_ssc.connection.ConnectionTester;
+import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
 import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI;
 import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI.ScanStatus;
 import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI.SyncData;
@@ -65,9 +62,9 @@ public class SyncScansTask {
 	private final SSCAuthenticatingRestConnection sscConn;
 
 	@Autowired
-	public SyncScansTask(ConfigSyncScansTask config, ConnectionFactory connFactory) {
-		this.fodConn = connFactory.getFodConnection(config.getFod());
-		this.sscConn = connFactory.getSSCConnection(config.getSsc());
+	public SyncScansTask(ConfigSyncScansTask config, ConnectionHolder connFactory) {
+		this.fodConn = connFactory.getFodConnection();
+		this.sscConn = connFactory.getSscConnection();
 	}
 	
 	@Scheduled(cron="${sync.jobs.syncScans.schedule}")
@@ -122,13 +119,5 @@ public class SyncScansTask {
 		} catch ( ParseException e ) {
 			throw new RuntimeException("Error parsing scan date "+dateString+" returned by FoD", e);
 		}
-	}
-	
-	@PostConstruct
-	public void postConstruct() {
-		LOG.debug("Testing connections to SSC and FoD for synchronizing scan results");
-		ConnectionTester.testFoDConnection(fodConn);
-		ConnectionTester.testSSCConnection(sscConn);
-		// TODO Any other tests?
 	}
 }

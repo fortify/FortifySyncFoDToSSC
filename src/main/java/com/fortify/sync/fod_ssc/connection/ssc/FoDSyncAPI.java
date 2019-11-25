@@ -31,13 +31,9 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -51,7 +47,6 @@ import com.fortify.client.ssc.api.AbstractSSCAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
-import com.fortify.sync.fod_ssc.config.ConfigSyncScansTask;
 import com.fortify.sync.fod_ssc.util.DefaultObjectMapperFactory;
 import com.fortify.util.rest.json.JSONMap;
 
@@ -63,7 +58,6 @@ import lombok.Setter;
 public class FoDSyncAPI extends AbstractSSCAPI {
 	private static final Logger LOG = LoggerFactory.getLogger(FoDSyncAPI.class);
 	private static final ObjectMapper MAPPER = DefaultObjectMapperFactory.getDefaultObjectMapper();
-	private static SSCSyncedApplicationVersionFilter filter;
 	
 	public FoDSyncAPI(SSCAuthenticatingRestConnection conn) {
 		super(conn);
@@ -80,9 +74,8 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 	}
 	
 	public void processSyncedApplicationVersions(final Consumer<SyncData> consumer) {
-		String authEntityName = filter.getSscSyncScansUserName();
 		conn().api(SSCApplicationVersionAPI.class)
-			.queryApplicationVersionsByAuthEntityName(authEntityName)
+			.queryApplicationVersions()
 			.paramFields("id", "name", "project")
 			.onDemandAttributeValuesByName()
 			.build().processAll(json->processSyncedApplicationVersion(consumer, json));
@@ -191,20 +184,4 @@ public class FoDSyncAPI extends AbstractSSCAPI {
 			}
 		}
 	}
-	
-	@Component @Data
-	public static final class SSCSyncedApplicationVersionFilter {
-		private String sscSyncScansUserName;
-		
-		@Autowired
-		public SSCSyncedApplicationVersionFilter(ConfigSyncScansTask config) {
-			this.sscSyncScansUserName = config.getSsc().getUserName();
-		}
-		
-		@PostConstruct
-		public void postConstruct() {
-			FoDSyncAPI.filter = this;
-		}
-	}
-
 }
