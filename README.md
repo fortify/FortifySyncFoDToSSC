@@ -60,6 +60,13 @@ sync:
       tenant: {FoD tenant}
       userName: {FoD user}
       password: {FoD password or PAT}
+      # Configure the number of retries if FoD rate limit is exceeded
+      # If user configured above is only used for this integration,
+      # this can be left at the default (1). If user is also used
+      # by other integrations, you may want to increase this to retry
+      # multiple times if the other integration is assigned a free 
+      # rate limit slot
+      #rateLimitMaxRetries: 1
       #proxy:
       #  url: {proxy URL}
       #  userName: {optional proxy user}
