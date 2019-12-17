@@ -22,7 +22,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
  * IN THE SOFTWARE.
  ******************************************************************************/
-package com.fortify.sync.fod_ssc.connection.ssc;
+package com.fortify.sync.fod_ssc.util;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +36,8 @@ import java.util.function.Consumer;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -45,11 +47,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
-import com.fortify.client.ssc.api.AbstractSSCAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
-import com.fortify.sync.fod_ssc.util.DefaultObjectMapperFactory;
+import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
 import com.fortify.util.rest.json.JSONMap;
 
 import lombok.AccessLevel;
@@ -57,12 +58,17 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-public final class FoDSyncAPI extends AbstractSSCAPI {
-	private static final Logger LOG = LoggerFactory.getLogger(FoDSyncAPI.class);
+@Component
+public final class SyncHelper {
+	private static final Logger LOG = LoggerFactory.getLogger(SyncHelper.class);
 	private static final ObjectMapper MAPPER = DefaultObjectMapperFactory.getDefaultObjectMapper();
+	@Getter private final FoDAuthenticatingRestConnection fodConn;
+	@Getter private final SSCAuthenticatingRestConnection sscConn;
 	
-	public FoDSyncAPI(SSCAuthenticatingRestConnection conn) {
-		super(conn);
+	@Autowired
+	public SyncHelper(ConnectionHolder connectionHolder) {
+		this.fodConn = connectionHolder.getFodConnection();
+		this.sscConn = connectionHolder.getSscConnection();
 	}
 	
 	public final void updateSyncStatus(String sscApplicationVersionId, ScanStatus scanStatus) {
@@ -70,16 +76,16 @@ public final class FoDSyncAPI extends AbstractSSCAPI {
 			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
 			attributes.add("FoD Sync - Status", scanStatus.asSyncStatusString());
-			conn().api(SSCAttributeAPI.class)
+			sscConn.api(SSCAttributeAPI.class)
 				.updateApplicationVersionAttributes(sscApplicationVersionId, attributes);
 		}
 	}
 	
 	public final void processSyncedApplicationVersions(final Consumer<JSONMap> consumer, String... applicationVersionFields) {
-		conn().api(SSCApplicationVersionAPI.class)
+		sscConn.api(SSCApplicationVersionAPI.class)
 			.queryApplicationVersions()
 			.paramFields(applicationVersionFields)
-			.onDemandAttributeValuesByName()
+			.embedAttributeValuesByName(false)
 			.preProcessor(this::hasFoDReleaseId)
 			.build().processAll(consumer);
 	}
@@ -98,11 +104,11 @@ public final class FoDSyncAPI extends AbstractSSCAPI {
 		return StringUtils.isNotBlank(getLinkedFoDReleaseId(json));
 	}
 	
-	public void processSyncedApplicationVersionsAndFoDReleases(final FoDAuthenticatingRestConnection fodConn, final BiConsumer<SyncData,JSONMap> consumer) {
-		processSyncData(syncData->processSyncedApplicationVersionsAndFoDReleases(fodConn, syncData, consumer));
+	public void processSyncedApplicationVersionsAndFoDReleases(final BiConsumer<SyncData,JSONMap> consumer) {
+		processSyncData(syncData->processSyncedApplicationVersionsAndFoDReleases(syncData, consumer));
 	}
 	
-	private void processSyncedApplicationVersionsAndFoDReleases(final FoDAuthenticatingRestConnection fodConn, final SyncData syncData, final BiConsumer<SyncData,JSONMap> consumer) {
+	private void processSyncedApplicationVersionsAndFoDReleases(final SyncData syncData, final BiConsumer<SyncData,JSONMap> consumer) {
 		String fodReleaseId = syncData.getFodReleaseId();
 		JSONMap fodRelease = fodConn.api(FoDReleaseAPI.class)
 			.queryReleases()

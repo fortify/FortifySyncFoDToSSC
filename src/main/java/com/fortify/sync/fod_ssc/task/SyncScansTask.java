@@ -40,15 +40,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.fortify.client.fod.api.FoDReleaseAPI;
-import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCArtifactAPI;
-import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.Constants;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
-import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
-import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI;
-import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI.ScanStatus;
-import com.fortify.sync.fod_ssc.connection.ssc.FoDSyncAPI.SyncData;
+import com.fortify.sync.fod_ssc.util.SyncHelper;
+import com.fortify.sync.fod_ssc.util.SyncHelper.ScanStatus;
+import com.fortify.sync.fod_ssc.util.SyncHelper.SyncData;
 import com.fortify.util.rest.json.JSONMap;
 
 //TODO Get schedule from injected config, instead of directly from property (for @Scheduled and @ContionalOnExpression)?
@@ -58,20 +55,17 @@ import com.fortify.util.rest.json.JSONMap;
 public class SyncScansTask {
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-	private final FoDAuthenticatingRestConnection fodConn;
-	private final SSCAuthenticatingRestConnection sscConn;
+	private final SyncHelper syncHelper;
 
 	@Autowired
-	public SyncScansTask(SyncScansTaskConfig config, ConnectionHolder connFactory) {
-		this.fodConn = connFactory.getFodConnection();
-		this.sscConn = connFactory.getSscConnection();
+	public SyncScansTask(SyncScansTaskConfig config, SyncHelper syncHelper) {
+		this.syncHelper = syncHelper;
 	}
 	
 	@Scheduled(cron="${sync.jobs.syncScans.schedule}")
 	public void syncScans() {
 		LOG.debug("Running syncScans task");
-		sscConn.api(FoDSyncAPI.class).processSyncedApplicationVersionsAndFoDReleases(
-				fodConn, this::processSyncedApplicationVersions);
+		syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
 	}
 	
 	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {
@@ -80,7 +74,7 @@ public class SyncScansTask {
 		ScanStatus scanStatus = syncData.getScanStatus().newIfDifferentFoDReleaseId(fodReleaseId);
 		String[] scanTypes = syncData.getIncludedScanTypes();
 		processSyncedApplicationVersion(sscApplicationVersionId, fodRelease, scanTypes, scanStatus);
-		sscConn.api(FoDSyncAPI.class).updateSyncStatus(sscApplicationVersionId, scanStatus);
+		syncHelper.updateSyncStatus(sscApplicationVersionId, scanStatus);
 	}
 
 	protected void processSyncedApplicationVersion(
@@ -96,9 +90,9 @@ public class SyncScansTask {
 					// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
 					String fodReleaseId = fodRelease.get("releaseId",String.class);
 					LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
-					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
+					syncHelper.getFodConn().api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
 					LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
-					sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
+					syncHelper.getSscConn().api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
 				} finally {
 					if ( tempFile.toFile().exists() ) {
 						tempFile.toFile().delete();
