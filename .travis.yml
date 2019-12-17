@@ -1,21 +1,20 @@
 language: java
 install: true
-
 sudo: false
-  
+    
 stages:
   - name: build
-#  - name: snapshotBranch
-#    if: tag IS blank AND branch =~ /^(\d+.)+\d+-SNAPSHOT$/
-#  - name: releaseTag
-#    if: tag IS present
+  - name: snapshotBranch
+    if: tag IS blank AND branch =~ /^(\d+.)+\d+-SNAPSHOT$/
+  - name: releaseTag
+    if: tag IS present
     
 jobs:
   include:
     - stage: build
-      script: /bin/sh ./gradlew build -x test
-#    - stage: snapshotBranch
-#      script: /bin/sh ./gradlew "-PoverrideVersion=$TRAVIS_BRANCH" build publish artifactoryPublish -x test -Dsnapshot=true -Dbuild.number=$TRAVIS_BUILD_NUMBER
-#    - stage: releaseTag
-#      script: /bin/sh ./gradlew "-PoverrideVersion=$TRAVIS_TAG" build publish bintrayUpload -x test -Dbuild.number=$TRAVIS_BUILD_NUMBER
+      script: /bin/sh ./gradlew build
+    - stage: snapshotBranch
+      script: /bin/sh ./gradlew "-PoverrideVersion=$TRAVIS_BRANCH" bintrayUpload -x test -Dbuild.number=$TRAVIS_BUILD_NUMBER
+    - stage: releaseTag
+      script: /bin/sh ./gradlew "-PoverrideVersion=$TRAVIS_TAG" bintrayUpload -x test -Dbuild.number=$TRAVIS_BUILD_NUMBER
       

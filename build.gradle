@@ -1,34 +1,46 @@
 plugins {
+	id 'java'
 	id 'org.springframework.boot' version '2.2.1.RELEASE'
 	id 'io.spring.dependency-management' version '1.0.8.RELEASE'
 	id "io.freefair.lombok" version "4.1.2"
-	id 'java'
-	id 'eclipse'
+	id "com.jfrog.bintray" version "1.8.4"
+	id 'org.ajoberstar.grgit' version "4.0.0"
+	id 'com.github.jk1.dependency-license-report' version '1.12'
 }
 
 group = 'com.fortify.sync.fod-ssc'
-version = '0.0.1-SNAPSHOT' // TODO Automatically determine version from Git tag/branch
-sourceCompatibility = '1.8'
+
+ext {
+	//gradleHelpersLocation = "https://raw.githubusercontent.com/fortify-ps/gradle-helpers/master"
+	gradleHelpersLocation = "../gradle-helpers"
+}
+
+apply from: "${gradleHelpersLocation}/repo-helper.gradle"
+apply from: "${gradleHelpersLocation}/version-helper.gradle"
+
+// Project and plugin version based on SCM information
+version = getProjectVersionAsBetaOrRelease(true)
+ext {
+	bintrayDownloadContainerName = getProjectVersionAsBetaOrRelease(false)
+	projectLicense = 'MIT'
+}
+
+apply from: "${gradleHelpersLocation}/dependency-sources-licenses-helper.gradle"
+apply from: "${gradleHelpersLocation}/bintray-binaries-helper.gradle"
+
+apply plugin: 'java'
+sourceCompatibility = 1.8
+
+configurations.all {
+    // Don't cache modules that may change (i.e. snapshots)
+	resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
 
 configurations {
 	developmentOnly
 	runtimeClasspath {
 		extendsFrom developmentOnly
 	}
-}
-
-configurations.all {
-    // check for updates every build
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
-
-repositories {
-	mavenLocal()
-    // repository with fortify-ps releases
-    maven { url "https://dl.bintray.com/fortify-ps/maven" }
-    // repository with fortify-ps snapshots
-    maven { url "https://oss.jfrog.org/artifactory/oss-snapshot-local" }
-    mavenCentral()
 }
 
 dependencies {
@@ -59,3 +71,16 @@ dependencyManagement {
 test {
 	useJUnitPlatform()
 }
+
+bintray {
+    filesSpec {
+       from("build/libs") { // Plugin jar
+          include "*.jar"
+       }
+       from("build/dist") { // Dependency sources and licenses
+          include "*.zip"
+       }
+       into '.'
+    }
+}
+_bintrayRecordingCopy.dependsOn 'build', 'packageDependencySourcesAndLicenses'
