@@ -101,6 +101,10 @@ public class LinkReleasesTask {
 				.paramFilterAnd(releaseFilters.getFodFilterParam())
 				.preProcessor(new JSONMapEnrichWithValue("application", application))
 				.preProcessor(release->!linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)));
+			// TODO OnlyFirst doesn't work properly; upon each task run the next release will be processed
+			//      (on first run, release 1 is created in SSC, 
+			//       on second run release 2 is created because release 1 is no longer in the results,
+			//       ...)
 			OrderBy onlyFirst = releaseFilters.getOnlyFirst();
 			if ( onlyFirst!=null ) {
 				qb.maxResults(1)
