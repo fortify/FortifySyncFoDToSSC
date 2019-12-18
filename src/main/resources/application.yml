@@ -5,7 +5,7 @@
 
 logging:
   level:
-    com.fortify.sync.fod_ssc: DEBUG
+    com.fortify.sync.fod_ssc: INFO
 
 spring:
   quartz: ## QuartzProperties

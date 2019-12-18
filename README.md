@@ -1,15 +1,17 @@
 # Fortify FoD-SSC Sync
 
-### WORK IN PROGRESS, NOT YET FUNCTIONAL
+## Work in progress
 
-This is still work in progress, but basic functionality should be working. 
+At the moment, only initial beta versions are provided; no official release is
+available yet. Recent beta versions are mostly functional, but have not been thoroughly tested.
 
-## To-do's
+### To-do's
 
-* Major cleanup of code, in particular for link releases task
+* Code cleanup, in particular for link releases task
 * Much more testing
-* Performance improvements (avoid duplicate requests, use bulk requests, ...)
-* More configuration options, more functionality
+* More configuration options
+* Web-based configuration, including options to configure FoD and SSC as per the prerequisites.
+* Move this documentation to a properly indexed documentation site
 
 ## SSC Preparations
 
@@ -42,22 +44,62 @@ The following SSC preparations are required to use this utility:
 
 The following SSC preparations are required to use this utility:
 
-* Define the user account to be used by the utility to connect with FoD. This user have permissions to view all applications and releases.
+* Define the user account to be used by the utility to connect with FoD. This user must have permissions to view all applications and releases.
 
-## Installation and usage
+## Download, configure and run the utility
 
-The utility can be built by running one of the following commands from the source tree 
-root directory:
-* Linux/bash: `./gradlew build -x test`
-* Linux/bash: `gradlew build -x test`
+The following sections describe where the utility can be downloaded, how to configure
+the utility, and how to run the utility.
 
-You will need to have Java JDK 1.8 (or later?) installed. Once built, the binary
-jar file can be found in the build/libs folder, which you can optionally copy to 
-any location on your system.
+### Downloads
 
-Next step is to configure the utility; following is an example configuration file:
+Both beta versions and release versions can be downloaded from https://bintray.com/fortify-ps/binaries/FortifySyncFoDToSSC. Release version may also
+be posted on https://github.com/fortify-ps/FortifySyncFoDToSSC/releases. 
+
+Note that beta versions are automatically published whenever there are code changes;
+there is no guarantee that these versions are functional, and documentation may not 
+be up to date.
+
+Every beta version build consists of the following three artifacts: 
+* `FortifySyncFoDToSSC-<version>-beta-<date>-<time>.jar`
+* `FortifySyncFoDToSSC-<version>-beta-<date>-<time>-licenseReport.zip`
+* `FortifySyncFoDToSSC-<version>-beta-<date>-<time>-dependencySources.zip`
+
+For each beta version, multiple builds may be available (with different date/time stamps). If you 
+are unsuccessful with a specific beta version build, you may want to try another build (if available).
+To identify the latest available beta version build, you may want to sort by the `Updated` column
+on the Bintray Files page.
+
+Release versions are named similarly but without date/time stamps, as there is only one build for each release version:
+* `FortifySyncFoDToSSC-<version>-release.jar`
+* `FortifySyncFoDToSSC-<version>-release-licenseReport.zip`
+* `FortifySyncFoDToSSC-<version>-release-dependencySources.zip`
+
+In order to run the utility, only the `.jar` file needs to be downloaded. The license report 
+and dependency sources zip files are only provided to comply with 3rd-party licensing requirements.
+ 
+
+### Utility Configuration File
+
+The utility requires a configuration file named `config.yml` to be available in a directory 
+named  `<fortify.home>/FortifySyncFoDToSSC/`. Here, the `<fortify.home>` directory 
+can be an existing Fortify SSC or SCA home directory, or you can use a separate home directory for 
+this utility. The utility uses it's own utility-specific sub-directory in the `<fortify.home>`
+directory, and doesn't share any configuration or data with any of the other Fortify products.
+
+The utility will use the following methods to locate the fortify.home directory, in this order:
+1. Specified on the Java command line with `-Dfortify.home=[directory]`
+2. Specified as an environment variable `FORTIFY_HOME=[directory]`
+3. Default value `~/.fortify`
+
+Following is an example configuration file:
 
 ```yaml
+# Override the default log level from INFO to DEBUG
+logging:
+  level:
+    com.fortify.sync.fod_ssc: DEBUG
+
 sync:
   connections:
     fod:
@@ -82,28 +124,31 @@ sync:
       password: {SSC password}
   jobs:
     syncScans:
-      schedule: '*/5 * * * * *'
+      schedule: '0 */1 * * * *'
     linkReleases:
-      schedule: '0 0 */2 * * *'
+      schedule: '30 */1 * * * *'
       fod:
         filters:
           application:
             fodFilterParam:
             filterExpressions:
-            # Filter based on custom FoD boolean attribute
             - attributesMap['SyncWithSSC'] == 'True'
-            #  - applicationName == 'wg'
+            #- applicationName == 'wg'
           release:
             fodFilterParam:
-            #filterExpressions:
-            #  - releaseName matches '5.0'
+            filterExpressions:
+            - staticScanDate!=null || dynamicScanDate!=null
+            #- releaseName matches '5.0'
             onlyFirst:
               orderBy: releaseCreatedDate
               direction: DESC
       ssc:
-        enabled: true
-        enabledScanTypes: Static
-        issueTemplateName: Prioritized High Risk Issue Template
+        autoCreateVersions: 
+          enabled: true
+          enabledScanTypes: 
+          - Static
+          - Dynamic
+          issueTemplateName: Prioritized High Risk Issue Template
 ```
 
 The `schedule` property is in extended cron format, using 6 fields to specify
@@ -111,17 +156,13 @@ second, minute, hour, day of month, month, and day of week. To disable either
 the `syncScans` or `linkReleases` you can either remove/comment out the 
 corresponding `schedule` property, or specify '-' as the property value.
 
-The configuration file will need to be available in the following location:
-`$fortify.home/FortifySyncFoDSSC/config.yml`
+### Running the utility
 
-`$fortify.home` can be an existing Fortify home directory, or a new directory. The utility
-will use the following methods to locate the fortify.home directory, in this order:
-1. Specified on the Java command line with -Dfortify.home=[directory]
-2. Specified as an environment variable FORTIFY_HOME=[directory]
-3. ~/.fortify
+The utility is provided as a single runnable JAR file; you will need to have a Java 
+Runtime Environment (JRE) version 1.8 or later installed in order to run the utility. 
 
-Once the configuration file has been installed in the correct location, you can
-start the utility using the following command:
+Once all prerequisites have been met, the utility can be started using the following 
+command:
 
 ```
 java [-Dfortify.home=/path/to/fortify/home] -jar [jar-file]
@@ -129,100 +170,38 @@ java [-Dfortify.home=/path/to/fortify/home] -jar [jar-file]
 
 The utility will output some log messages to the console; there is no further interaction
 with the utility at the moment. The utility will run the various synchronization tasks 
-in the background.  
+in the background, according to the configured schedules.  
 
+## Managing FoD application release - SSC application version mappings
 
-## Setting up a manual mapping
+### Setting up a manual mapping
 
-Perform the following steps in order to set up a manual mapping for synchronizing FoD scan results to SSC:
+In some cases, for example if the linkReleases task is disabled or if the task fails to automatically
+link a FoD release to an SSC application version (for example because they are named differently), the
+following steps will allow for setting up a manual mapping:
 
 * Create a new SSC application version, or edit an existing application version that is not being synchronized yet
 * On the 'Organization Attributes' page:
     * Set the FoD release id that this application version should be synchronized with
     * Select one or more scan result types that should be synchronized 
 
-## Disable a mapping
+### Disable a mapping
 
-To temporarily or permanently disable synchronization for a specific mapping, one of the following two approaches can be used:
+To temporarily or permanently disable synchronization for a specific mapping, simply deselect all
+scan types from the `FoD Sync - Include Scan Types` application version attribute in the
+SSC application version configuration.
 
-* Remove access to the SSC application version for the 'FoD Sync - Scans' user
-* Deselect all scan types from the `FoD Sync - Include Scan Types` application version attribute 
-
-## Implementation Plan
-
-Considerations:
-
-* Due to FoD rate limiting (like download at most 1 FPR per 30 seconds), it doesn't make sense to run a lot of tasks in parallel; processing will be mostly sequential.
-* By default, the utility should run in a fully automated fashion, without requiring users to manually configure any mappings between FoD releases and SSC application versions.
-* If needed, user should have manual control over mappings and the synchronization process.
-* Preferably, synchronization state should be externalized to either SSC or FoD as much as possible, to avoid having to store and maintain a potentially large status database. 
-  
-
-Implementation plan:
-
-* Utility runs two background tasks:
-    * Task `Link Releases` to automatically link FoD releases to SSC application versions
-    * Task `Sync Scans` for syncing the latest scans for linked releases
-
-* Both tasks use separate configuration values for the following:
-    * Run interval (each task can have a different interval)
-    * FoD and SSC credentials (each task can use different credentials)
-    * Any other task-specific configuration    
-    
-* Task `Link releases` performs the following activities (using caching where applicable):
-    1. Query `/api/v1/localUsers?q=userName:"FoD Sync - Scans"&fields=id`, user name taken from the `Sync Scans` task configuration
-    2. Query `/authEntities/{id returned by step 1}/projectVersions?fields=id` to get all application versions already being synchronized  
-    3. Query `/api/v1/projectVersions/{id}/attributes?fields=guid,value` for every application version, add the value for the guid matching the `FoD Sync - Release Id` to the 'already mapped release id's' cache
-    4. Query all FoD releases that match configurable filter criteria
-        * As much as possible, filtering will be done by FoD, but we also may need to do client-side filtering (for example if FoD doesn’t support filtering by application attribute)
-        * Querying this list of releases may use the `/api/v3/applications` and `/api/v3/applications/{id}/releases` endpoints, or the `/api/v3/releases` endpoint (whichever approach allows us to do as much filtering as possible on the FoD side)
-    5. For every matching release, if the release id is not found in the 'already mapped release id's' cache:
-        * Query SSC to see whether a similarly named application version already exists
-           * If a matching application version exists, update the application version attributes as described in the 'Setting up a manual mapping' section
-           * If no matching application version exists, and if utility has been configured to automatically create new application versions, create new application version, using similar settings as described in the 'Setting up a manual mapping' section
-
-* Task `Sync Scans` performs the following activities (using caching where applicable):
-    1. Get all SSC application versions to which our current user is assigned
-    2. For each application version
-        1. Get the values for `FoD Sync - Release Id`, `FoD Sync - Include Scan Types`, and `FoD Sync - Status` attributes
-        2. If release id or scan types empty, continue with next application version
-        3. Query `/api/v3/releases?filters=releaseId%3A{releaseId}&fields=staticScanDate%2CdynamicScanDate%2CmobileScanDate`
-        4. Compare static, dynamic and mobile scan dates against the values stored in the `FoD Sync - Status` attribute (note that attribute may be empty on first sync)
-        5. If scan date returned by FoD is later than date stored in the status attribute, and the scan type is enabled in the `FoD Sync - Include Scan Types` attribute, download the FPR from FoD, upload FPR to SSC, and set the new scan date in the status field
-            * Important: Don't update date scan date in status field if scan type is disabled, as we may want to enable a scan type later and sync the latest FPR file
-        
+The same approach can be used to temporarily or permanently disable synchronization of a specific
+scan type, for example to only synchronize static scans but not dynamic scans.
 
 
-Phase 1:
+## Build from source
 
-* Basic implementation of the two tasks
-* Configuration is probably done through a property/yaml file containing the following settings:
-    * FoD base URL and tentant
-    * SSC base URL
-    * Boolean whether to auto-create SSC version attributes? Or should we do so anyway as the utility won't run without it?
-    * `Sync Scans` task:
-        * FoD username and password/PAT
-        * SSC username and password, or token
-        * Task run interval (default once per hour or so?)
-    * `Link Releases` task:
-        * FoD username and password/PAT
-        * SSC username and password, or token
-        * Task run interval (default once per day or so?)
-        * Boolean auto-create SSC application versions
-        * FoD application/release search criteria (TBD: what search criteria do we want to support in first phase?)
-* No user interface
-* SSC application versions are created using SSC default issue template, and random values for any required attributes (of course setting appropriate values for the FoD Sync attributes)
+The utility can be built by running one of the following commands from the source tree 
+root directory:
+* Linux/bash: `./gradlew build -x test`
+* Linux/bash: `gradlew build -x test`
 
-Future phases:
-
-* Provide web-based user interface for configuring the utility
-    * Initially listening on localhost only, later add support for remote connections and authentication by checking credentials against FoD or SSC
-* Add support for additional FoD application/release search criteria
-* For new SSC application versions, set version attributes based on FoD application attributes
-* For new SSC application versions, allow the user to configure an SSC application version that is used as a template for configuring issue template, version attributes, access on the new version
-* Add support for viewing existing FoD release/SSC version links in the utility web UI?
-* Add support for manually mapping FoD releases to SSC versions in the utility web UI?
-    * The only advantage over configuring a mapping in SSC directly would be that the utility can display the list of available FoD release names, provide auto-complete release/version names, instead of having to configure a release id in SSC.
-
-
- 
+You will need to have Java JDK 1.8 or later installed. Once built, the binary
+jar file can be found in the build/libs folder, which you can optionally copy to 
+any location on your system.

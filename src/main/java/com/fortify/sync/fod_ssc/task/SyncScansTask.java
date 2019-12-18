@@ -65,7 +65,7 @@ public class SyncScansTask {
 	
 	@Scheduled(cron="${sync.jobs.syncScans.schedule}")
 	public void syncScans() {
-		LOG.debug("Running syncScans task");
+		LOG.info("Running syncScans task");
 		try {
 			syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
 		} finally {

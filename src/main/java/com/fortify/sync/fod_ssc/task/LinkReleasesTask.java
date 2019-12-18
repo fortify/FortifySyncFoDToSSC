@@ -73,7 +73,7 @@ public class LinkReleasesTask {
 	// TODO Set schedule based on inject config, instead of directly from property?
 	@Scheduled(cron="${sync.jobs.linkReleases.schedule}")
 	public void linkReleases() {
-		LOG.debug("Running linkReleases task");
+		LOG.info("Running linkReleases task");
 		try {
 			new FoDUnlinkedReleasesProcessor().processFoDApplications();
 		} finally {
