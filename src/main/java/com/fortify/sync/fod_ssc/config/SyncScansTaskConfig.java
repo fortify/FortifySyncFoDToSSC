@@ -28,6 +28,5 @@ import lombok.Data;
 
 @Data
 public class SyncScansTaskConfig {
-	private boolean enabled = false;
 	private String schedule = "0 0 * * * *"; // Currently not used, as task references property directly
 }

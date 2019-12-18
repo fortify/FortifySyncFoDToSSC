@@ -60,12 +60,17 @@ public class SyncScansTask {
 	@Autowired
 	public SyncScansTask(SyncScansTaskConfig config, SyncHelper syncHelper) {
 		this.syncHelper = syncHelper;
+		LOG.info("syncScans task configuration: {}", config);
 	}
 	
 	@Scheduled(cron="${sync.jobs.syncScans.schedule}")
 	public void syncScans() {
 		LOG.debug("Running syncScans task");
-		syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
+		try {
+			syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
+		} finally {
+			LOG.debug("Completed syncScans task");
+		}
 	}
 	
 	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {
@@ -83,7 +88,7 @@ public class SyncScansTask {
 		for ( String scanType : scanTypes ) {
 			Date fodScanDate = getFoDScanDate(fodRelease, scanType);
 			Date oldScanDate = scanStatus.getScanDate(scanType);
-			LOG.debug("Scan type {}: current scan date {}, previous scan date {}", scanType, fodScanDate, oldScanDate);
+			LOG.debug("[{} - {}] Scan type {}: current scan date {}, previous scan date {}", fodRelease.get("applicationName", String.class), fodRelease.get("releaseName", String.class), scanType, fodScanDate, oldScanDate);
 			if ( fodScanDate!=null && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
 				Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
 				try {

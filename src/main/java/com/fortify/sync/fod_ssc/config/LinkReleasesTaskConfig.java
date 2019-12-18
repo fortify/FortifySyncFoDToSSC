@@ -31,7 +31,6 @@ import lombok.Data;
 
 @Data
 public class LinkReleasesTaskConfig {
-	private boolean enabled = false;
 	private String schedule = "0 0 1 * * *"; // Currently not used, as task references property directly
 	private ConfigJobLinkReleasesFoD fod = new ConfigJobLinkReleasesFoD();
 	private ConfigJobLinkReleasesSSC ssc = new ConfigJobLinkReleasesSSC();

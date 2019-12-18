@@ -67,13 +67,18 @@ public class LinkReleasesTask {
 	public LinkReleasesTask(LinkReleasesTaskConfig config, SyncHelper syncHelper) {
 		this.config = config;
 		this.syncHelper = syncHelper;
+		LOG.info("linkReleases task configuration: {}", config);
 	}
 	
 	// TODO Set schedule based on inject config, instead of directly from property?
 	@Scheduled(cron="${sync.jobs.linkReleases.schedule}")
 	public void linkReleases() {
 		LOG.debug("Running linkReleases task");
-		new FoDUnlinkedReleasesProcessor().processFoDApplications();
+		try {
+			new FoDUnlinkedReleasesProcessor().processFoDApplications();
+		} finally {
+			LOG.debug("Completed linkReleases task");
+		}
 	}
 
 	private final class FoDUnlinkedReleasesProcessor {
@@ -97,14 +102,10 @@ public class LinkReleasesTask {
 		private void processFoDApplication(JSONMap application) {
 			ConfigReleaseFilters releaseFilters = config.getFod().getFilters().getRelease();
 			FoDReleasesQueryBuilder qb = syncHelper.getFodConn().api(FoDReleaseAPI.class).queryReleases()
+				.onDemandAll()
 				.paramFilterAnd("applicationId", application.get("applicationId", String.class))
 				.paramFilterAnd(releaseFilters.getFodFilterParam())
-				.preProcessor(new JSONMapEnrichWithValue("application", application))
-				.preProcessor(release->!linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)));
-			// TODO OnlyFirst doesn't work properly; upon each task run the next release will be processed
-			//      (on first run, release 1 is created in SSC, 
-			//       on second run release 2 is created because release 1 is no longer in the results,
-			//       ...)
+				.preProcessor(new JSONMapEnrichWithValue("application", application));
 			OrderBy onlyFirst = releaseFilters.getOnlyFirst();
 			if ( onlyFirst!=null ) {
 				qb.maxResults(1)
@@ -116,7 +117,17 @@ public class LinkReleasesTask {
 					qb.preProcessor(new JSONMapFilterSpEL(MatchMode.INCLUDE, expr));
 				}
 			}
-			qb.build().processAll(this::processUnlinkedFoDRelease);
+			qb.build().processAll(this::processFoDRelease);
+		}
+		
+		private void processFoDRelease(JSONMap release) {
+			// We need to filter here instead of using a filtering pre-processor
+			// on the FoDReleasesQueryBuilder; otherwise the 'onlyFirst' release 
+			// filter would return the first release that hasn't been linked yet
+			// on each task run.
+			if ( !linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)) ) {
+				processUnlinkedFoDRelease(release);
+			}
 		}
 	
 		private void processUnlinkedFoDRelease(JSONMap release) {
