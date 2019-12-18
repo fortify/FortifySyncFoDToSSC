@@ -13,7 +13,11 @@ available yet. Recent beta versions are mostly functional, but have not been tho
 * Web-based configuration, including options to configure FoD and SSC as per the prerequisites.
 * Move this documentation to a properly indexed documentation site
 
-## SSC Preparations
+## Prerequisites
+
+The following sections describe various prerequisites for running the sync utility.
+
+### SSC Preparations
 
 The following SSC preparations are required to use this utility:
 
@@ -40,7 +44,7 @@ The following SSC preparations are required to use this utility:
     * View attribute definitions
     * View issue templates, process templates, ... (is this necessary to determine default issue template?)
 
-## FoD Preparations
+### FoD Preparations
 
 The following SSC preparations are required to use this utility:
 
