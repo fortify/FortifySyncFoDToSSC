@@ -32,11 +32,23 @@ import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 
 import lombok.Data;
 
+/**
+ * Simple {@link Component} that holds connections to both SSC and FoD.
+ * Actual connection instances are automatically injected.
+ * 
+ * @author Ruud Senden
+ *
+ */
 @Component @Data
 public class ConnectionHolder {
 	private final FoDAuthenticatingRestConnection fodConnection;
 	private final SSCAuthenticatingRestConnection sscConnection;
 
+	/**
+	 * Auto-wire FoD and SSC connection instances
+	 * @param fodConnection
+	 * @param sscConnection
+	 */
 	@Autowired 
 	public ConnectionHolder(FoDAuthenticatingRestConnection fodConnection, SSCAuthenticatingRestConnection sscConnection) {
 		this.fodConnection = fodConnection;

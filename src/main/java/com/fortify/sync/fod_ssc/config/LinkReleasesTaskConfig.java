@@ -25,10 +25,19 @@
 package com.fortify.sync.fod_ssc.config;
 
 import com.fortify.client.fod.api.query.builder.FoDOrderByDirection;
+import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
 import com.fortify.util.spring.expression.SimpleExpression;
 
 import lombok.Data;
 
+/**
+ * This {@link Data} class holds the configuration for {@link LinkReleasesTask}.
+ * This configuration is automatically loaded from the configuration file by
+ * {@link FortifySyncFoDToSSCApplication#configLinkReleasesTask()}.
+ *  
+ * @author Ruud Senden
+ *
+ */
 @Data
 public class LinkReleasesTaskConfig {
 	private String schedule = "0 0 1 * * *"; // Currently not used, as task references property directly

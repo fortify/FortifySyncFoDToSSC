@@ -24,8 +24,19 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
+import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
+import com.fortify.sync.fod_ssc.task.SyncScansTask;
+
 import lombok.Data;
 
+/**
+ * This {@link Data} class holds the configuration for {@link SyncScansTask}.
+ * This configuration is automatically loaded from the configuration file by
+ * {@link FortifySyncFoDToSSCApplication#configSyncScansTask()}.
+ *  
+ * @author Ruud Senden
+ *
+ */
 @Data
 public class SyncScansTaskConfig {
 	private String schedule = "0 0 * * * *"; // Currently not used, as task references property directly

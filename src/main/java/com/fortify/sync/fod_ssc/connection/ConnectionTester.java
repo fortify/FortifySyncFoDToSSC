@@ -32,9 +32,22 @@ import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 
+/**
+ * Simple {@link Component} that tests the injected FoD and SSC connection
+ * instances by executing a simple query.
+ * 
+ * @author Ruud Senden
+ *
+ */
 @Component
 public class ConnectionTester {
 	
+	/**
+	 * Test the injected {@link FoDAuthenticatingRestConnection} by querying for
+	 * a single arbitrary release.
+	 * 
+	 * @param conn
+	 */
 	@Autowired
 	public final void testFoDConnection(FoDAuthenticatingRestConnection conn) {
 		conn.api(FoDReleaseAPI.class)
@@ -44,6 +57,12 @@ public class ConnectionTester {
 			.build().getUnique();
 	}
 
+	/**
+	 * Test the injected {@link SSCAuthenticatingRestConnection} by querying for
+	 * a single arbitrary application version.
+	 * 
+	 * @param conn
+	 */
 	@Autowired
 	public final void testSSCConnection(SSCAuthenticatingRestConnection conn) {
 		conn.api(SSCApplicationVersionAPI.class)

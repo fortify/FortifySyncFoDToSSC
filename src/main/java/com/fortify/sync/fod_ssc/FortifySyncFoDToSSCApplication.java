@@ -15,56 +15,108 @@ import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection.SSCAuth
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 
+/**
+ * This {@link SpringBootApplication} class provides the following functionality:
+ * <ul>
+ *  <li><code>main()</code> method for starting the utility:
+ *      <ul>
+ *       <li>Set various system properties by calling {@link Constants#setSystemProperties()}</li>
+ *       <li>Check whether the required configuration file exists</li>
+ *       <li>Start the actual application by calling {@link SpringApplication#run(Class, String...)}</li>
+ *      </ul></li>
+ *  <li>{@link Bean}-annotated methods that provide configuration beans and
+ *      connections instances for accessing FoD and SSC<li>
+ * </ul>
+ * @author Ruud Senden
+ *
+ */
 @SpringBootApplication
 @EnableScheduling
 public class FortifySyncFoDToSSCApplication {
+	/**
+	 * Start the application
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		Constants.setSystemProperties();
 		checkConfigFile();
 		SpringApplication.run(FortifySyncFoDToSSCApplication.class, args);
 	}
 
+	/**
+	 * Check whether the required configuration file exists
+	 */
 	private static final void checkConfigFile() {
-		String configFileName = System.getProperty("sync.config");
-		File configFile = new File(configFileName);
+		File configFile = new File(Constants.SYNC_CONFIG);
 		if ( !configFile.exists() ) {
-			throw new RuntimeException("Configuration file "+configFileName+" does not exist");
+			throw new RuntimeException("Configuration file "+Constants.SYNC_CONFIG+" does not exist");
 		}
 		if ( !configFile.canRead() ) {
-			throw new RuntimeException("Configuration file "+configFileName+" cannot be read");
+			throw new RuntimeException("Configuration file "+Constants.SYNC_CONFIG+" cannot be read");
 		}
 	}
 	
+	/**
+	 * Get a {@link FoDAuthenticatingRestConnectionBuilder} instance, automatically
+	 * wiring all FoD connection properties defined in the configuration file. 
+	 * @return
+	 */
 	@Bean
 	@ConfigurationProperties("sync.connections.fod") 
 	public FoDAuthenticatingRestConnectionBuilder fodConnectionBuilder() {
 		return FoDAuthenticatingRestConnection.builder().useCache(false).multiThreaded(true);
 	}
 	
+	/**
+	 * Get a {@link SSCAuthenticatingRestConnectionBuilder} instance, automatically
+	 * wiring all SSC connection properties defined in the configuration file. 
+	 * @return
+	 */
 	@Bean
 	@ConfigurationProperties("sync.connections.ssc") 
 	public SSCAuthenticatingRestConnectionBuilder sscConnectionBuilder() {
 		return SSCAuthenticatingRestConnection.builder().useCache(false).multiThreaded(true);
 	}
 	
+	/**
+	 * Get a {@link LinkReleasesTaskConfig} instance, automatically wiring all 
+	 * configuration properties defined in the configuration file. 
+	 * @return
+	 */
 	@Bean
 	@ConfigurationProperties("sync.jobs.link-releases")
 	public LinkReleasesTaskConfig configLinkReleasesTask() {
 		return new LinkReleasesTaskConfig();
 	}
 	
+	/**
+	 * Get a {@link SyncScansTaskConfig} instance, automatically wiring all 
+	 * configuration properties defined in the configuration file. 
+	 * @return
+	 */
 	@Bean
 	@ConfigurationProperties("sync.jobs.sync-scans")
 	public SyncScansTaskConfig configSyncScansTask() {
 		return new SyncScansTaskConfig();
 	}
 	
-	
+	/**
+	 * Instantiate the {@link FoDAuthenticatingRestConnection} instance
+	 * used to connect to FoD, based on the connection builder returned
+	 * by {@link #fodConnectionBuilder()}. 
+	 * @return
+	 */
 	@Bean
 	public FoDAuthenticatingRestConnection fodConnection() {
 		return fodConnectionBuilder().useCache(false).build();
 	}
 	
+	/**
+	 * Instantiate the {@link SSCAuthenticatingRestConnection} instance
+	 * used to connect to SSC, based on the connection builder returned
+	 * by {@link #sscConnectionBuilder()}. 
+	 * @return
+	 */
 	@Bean
 	public SSCAuthenticatingRestConnection sscConnection() {
 		return sscConnectionBuilder().useCache(false).build();

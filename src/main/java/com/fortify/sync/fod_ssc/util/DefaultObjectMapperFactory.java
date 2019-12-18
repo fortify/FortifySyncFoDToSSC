@@ -27,6 +27,12 @@ package com.fortify.sync.fod_ssc.util;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Factory class that provides a default {@link ObjectMapper} instance.
+ * 
+ * @author Ruud Senden
+ *
+ */
 public class DefaultObjectMapperFactory {
 	private static final ObjectMapper DEFAULT_OBJECT_MAPPER = _getDefaultObjectMapper();
 	
@@ -46,28 +52,4 @@ public class DefaultObjectMapperFactory {
 	private static final ObjectMapper _getDefaultObjectMapper() {
 		return new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
-	
-	/*
-	private ConversionService getConversionService() {
-		final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-		DefaultConversionService result = new DefaultConversionService();
-		result.addConverter(new Converter<String, Date>() {
-			@Override
-			public Date convert(String source) {
-				try {
-					return format.parse(source);
-				} catch ( ParseException e ) {
-					throw new RuntimeException("Error parsing date format pattern", e);
-				}
-			}
-		});
-		result.addConverter(new Converter<Date, String>() {
-			@Override
-			public String convert(Date source) {
-				return format.format(source);
-			}
-		});
-		return result;
-	}
-	*/
 }
