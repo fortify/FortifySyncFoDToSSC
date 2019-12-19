@@ -98,12 +98,16 @@ public class SyncScansTask {
 					syncHelper.getFodConn().api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
 					LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
 					syncHelper.getSscConn().api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
+					scanStatus.setScanDate(scanType, fodScanDate);
+				} catch (RuntimeException e) {
+					// We catch the exception here in order to allow other scan types to be processed,
+					// and scan status to be updated for successfully processed scan types.
+					LOG.error("Error processing scan type "+scanType,e);
 				} finally {
 					if ( tempFile.toFile().exists() ) {
 						tempFile.toFile().delete();
 					}
 				}
-				scanStatus.setScanDate(scanType, fodScanDate);
 			} 
 		}
 	}
