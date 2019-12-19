@@ -4,14 +4,8 @@
 
 At the moment, only initial beta versions are provided; no official release is
 available yet. Recent beta versions are mostly functional, but have not been thoroughly tested.
-
-### To-do's
-
-* Code cleanup, in particular for link releases task
-* Much more testing
-* More configuration options
-* Web-based configuration, including options to configure FoD and SSC as per the prerequisites.
-* Move this documentation to a properly indexed documentation site
+See https://github.com/fortify-ps/FortifySyncFoDToSSC/issues for a list of current issues and
+ideas for future improvements.
 
 ## Prerequisites
 

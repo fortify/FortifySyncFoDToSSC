@@ -49,6 +49,7 @@ import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCAttributeAPI;
+import com.fortify.client.ssc.api.query.builder.EmbedType;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
 import com.fortify.util.rest.json.JSONMap;
@@ -85,7 +86,7 @@ public final class SyncHelper {
 		sscConn.api(SSCApplicationVersionAPI.class)
 			.queryApplicationVersions()
 			.paramFields(applicationVersionFields)
-			.embedAttributeValuesByName(false)
+			.embedAttributeValuesByName(EmbedType.PRELOAD)
 			.preProcessor(this::hasFoDReleaseId)
 			.build().processAll(consumer);
 	}
