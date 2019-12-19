@@ -143,7 +143,7 @@ sync:
       ssc:
         autoCreateVersions: 
           enabled: true
-          enabledScanTypes: 
+          enabledFoDScanTypes: 
           - Static
           - Dynamic
           issueTemplateName: Prioritized High Risk Issue Template

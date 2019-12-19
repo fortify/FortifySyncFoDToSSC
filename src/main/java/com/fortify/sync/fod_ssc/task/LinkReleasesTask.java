@@ -164,7 +164,7 @@ public class LinkReleasesTask {
 					.attribute("FoD Sync - Release Id", fodReleaseId)
 					.issueTemplateName(autoCreateVersionsConfig.getIssueTemplateName());
 				
-				for (String scanType : autoCreateVersionsConfig.getEnabledScanTypes()) {
+				for (String scanType : autoCreateVersionsConfig.getEnabledFoDScanTypes()) {
 					createVersionBuilder.attribute("FoD Sync - Include Scan Types", scanType);
 				}
 				
@@ -189,7 +189,7 @@ public class LinkReleasesTask {
 		private MultiValueMap<String, Object> getAttributesMap(String fodReleaseId) {
 			MultiValueMap<String,Object> attributes = new LinkedMultiValueMap<>();
 			attributes.add("FoD Sync - Release Id", fodReleaseId);
-			attributes.addAll("FoD Sync - Include Scan Types", Arrays.asList(config.getSsc().getAutoCreateVersions().getEnabledScanTypes()));
+			attributes.addAll("FoD Sync - Include Scan Types", Arrays.asList(config.getSsc().getAutoCreateVersions().getEnabledFoDScanTypes()));
 			return attributes;
 		}
 	}

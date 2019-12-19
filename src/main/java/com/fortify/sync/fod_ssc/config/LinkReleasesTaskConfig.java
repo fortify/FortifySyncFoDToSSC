@@ -76,6 +76,6 @@ public class LinkReleasesTaskConfig {
     @Data public static class ConfigAutoCreate {
     	private boolean enabled = false;
     	private String issueTemplateName = "Prioritized High Risk Issue Template";
-    	private String[] enabledScanTypes = new String[] {"Static", "Dynamic"};
+    	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
 	}
 }
