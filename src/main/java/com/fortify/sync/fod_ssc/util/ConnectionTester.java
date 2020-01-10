@@ -22,7 +22,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
  * IN THE SOFTWARE.
  ******************************************************************************/
-package com.fortify.sync.fod_ssc.connection;
+package com.fortify.sync.fod_ssc.util;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -34,7 +34,8 @@ import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 
 /**
  * Simple {@link Component} that tests the injected FoD and SSC connection
- * instances by executing a simple query.
+ * instances by executing a simple query during application start-up. Failure 
+ * to connect to either SSC or FoD will cause the application to terminate.
  * 
  * @author Ruud Senden
  *
