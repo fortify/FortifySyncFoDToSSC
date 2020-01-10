@@ -64,16 +64,11 @@ public class LinkReleasesTask extends AbstractScheduledTask {
 		super(config);
 		this.config = config;
 		this.syncHelper = syncHelper;
-		LOG.info("linkReleases task configuration: {}", config);
+		LOG.info("{} configuration: {}", getTaskName(), config);
 	}
 	
 	public void runTask() {
 		new FoDUnlinkedReleasesProcessor().processFoDApplications();
-	}
-	
-	@Override
-	protected String getTaskName() {
-		return "linkReleases";
 	}
 
 	private final class FoDUnlinkedReleasesProcessor {

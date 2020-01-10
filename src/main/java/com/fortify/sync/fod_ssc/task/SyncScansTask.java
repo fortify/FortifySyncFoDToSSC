@@ -56,16 +56,11 @@ public class SyncScansTask extends AbstractScheduledTask {
 	public SyncScansTask(SyncScansTaskConfig config, SyncHelper syncHelper) {
 		super(config);
 		this.syncHelper = syncHelper;
-		LOG.info("syncScans task configuration: {}", config);
+		LOG.info("{} configuration: {}", getTaskName(), config);
 	}
 
 	public void runTask() {
 		syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
-	}
-	
-	@Override
-	protected String getTaskName() {
-		return "syncScans";
 	}
 	
 	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {

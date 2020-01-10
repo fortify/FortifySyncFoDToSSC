@@ -35,35 +35,73 @@ import org.springframework.scheduling.support.CronTrigger;
 
 import com.fortify.sync.fod_ssc.config.IScheduleConfig;
 
+/**
+ * Abstract base class for scheduled tasks. Based on the provided {@link IScheduleConfig},
+ * this class will determine whether scheduled execution is enabled or not. If enabled,
+ * the {@link #runTask()} method provided by the concrete implementation class will be 
+ * automatically invoked based on the configured schedule.  
+ * 
+ * @author Ruud Senden
+ *
+ */
 public abstract class AbstractScheduledTask implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractScheduledTask.class);
+	private final String DEFAULT_TASK_NAME = this.getClass().getSimpleName();
 	private final String schedule;
 	@Autowired private TaskScheduler scheduler;
 	
-	public AbstractScheduledTask(IScheduleConfig config) {
+	/**
+	 * Subclasses will need to pass an {@link IScheduleConfig} instance that
+	 * describes the schedule for running the task. The {@link #postConstruct()}
+	 * method will use this information to actually set up the scheduled task. 
+	 * 
+	 * @param config {@link IScheduleConfig} instance
+	 */
+	protected AbstractScheduledTask(IScheduleConfig config) {
 		this.schedule = config.getCronSchedule();
 	}
 	
+	/**
+	 * Set up scheduled task execution if a valid schedule has been configured.  
+	 */
 	@PostConstruct
 	public void postConstruct() {
 		if ("-".equals(StringUtils.defaultIfBlank(schedule,"-")) ) {
-			LOG.warn("No schedule defined for {} task; task will not be run automatically", getTaskName());
+			LOG.warn("No schedule defined for {}; task will not be run automatically", getTaskName());
 		} else {
-			LOG.info("Schedule for {} task: {}", getTaskName(), schedule);
+			LOG.info("Schedule for {}: {}", getTaskName(), schedule);
 			scheduler.schedule(this, new CronTrigger(schedule));
 		}
 	}
 	
+	/**
+	 * This method is invoked by the scheduler; it logs start and end of scheduled task
+	 * execution, invoking the abstract {@link #runTask()} method to have subclasses
+	 * perform the actual work.
+	 */
 	public final void run() {
-		LOG.info("Running {} task", getTaskName());
+		LOG.info("Running {}", getTaskName());
 		try {
 			runTask();
 		} finally {
-			LOG.debug("Completed {} task", getTaskName());
+			LOG.debug("Completed {}", getTaskName());
 		}
 	}
 	
-	protected abstract String getTaskName();
+	/**
+	 * Return the task name used in logging statements. This default implementation
+	 * returns the simple name of the concrete implementation class; subclasses may
+	 * override this default implementation.
+	 * @return
+	 */
+	protected String getTaskName() {
+		return DEFAULT_TASK_NAME;
+	}
+
+	/**
+	 * Subclasses need to implement this method to perform the actual work. Implementations
+	 * should not log start and end, as this is already handled by {@link #run()}.
+	 */
 	protected abstract void runTask();
 	
 	
