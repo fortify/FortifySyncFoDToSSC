@@ -51,7 +51,6 @@ import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCAttributeAPI;
 import com.fortify.client.ssc.api.query.builder.EmbedType;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
-import com.fortify.sync.fod_ssc.connection.ConnectionHolder;
 import com.fortify.util.rest.json.JSONMap;
 
 import lombok.AccessLevel;
@@ -67,9 +66,9 @@ public final class SyncHelper {
 	@Getter private final SSCAuthenticatingRestConnection sscConn;
 	
 	@Autowired
-	public SyncHelper(ConnectionHolder connectionHolder) {
-		this.fodConn = connectionHolder.getFodConnection();
-		this.sscConn = connectionHolder.getSscConnection();
+	public SyncHelper(FoDAuthenticatingRestConnection fodConn, SSCAuthenticatingRestConnection sscConn) {
+		this.fodConn = fodConn;
+		this.sscConn = sscConn;
 	}
 	
 	public final void updateSyncStatus(String sscApplicationVersionId, ScanStatus scanStatus) {
