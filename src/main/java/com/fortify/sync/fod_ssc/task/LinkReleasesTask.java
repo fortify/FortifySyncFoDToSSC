@@ -29,8 +29,6 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -56,29 +54,26 @@ import com.fortify.util.rest.json.preprocessor.filter.JSONMapFilterSpEL;
 import com.fortify.util.spring.expression.SimpleExpression;
 
 @Component
-// Only load bean if schedule is defined and not equal to '-'
-@ConditionalOnExpression("'${sync.jobs.linkReleases.schedule:-}'!='-'")
-public class LinkReleasesTask {
+public class LinkReleasesTask extends AbstractScheduledTask {
 	private static final Logger LOG = LoggerFactory.getLogger(LinkReleasesTask.class);
 	private final SyncHelper syncHelper;
 	private final LinkReleasesTaskConfig config;
 	
 	@Autowired
 	public LinkReleasesTask(LinkReleasesTaskConfig config, SyncHelper syncHelper) {
+		super(config);
 		this.config = config;
 		this.syncHelper = syncHelper;
 		LOG.info("linkReleases task configuration: {}", config);
 	}
 	
-	// TODO Set schedule based on inject config, instead of directly from property?
-	@Scheduled(cron="${sync.jobs.linkReleases.schedule}")
-	public void linkReleases() {
-		LOG.info("Running linkReleases task");
-		try {
-			new FoDUnlinkedReleasesProcessor().processFoDApplications();
-		} finally {
-			LOG.debug("Completed linkReleases task");
-		}
+	public void runTask() {
+		new FoDUnlinkedReleasesProcessor().processFoDApplications();
+	}
+	
+	@Override
+	protected String getTaskName() {
+		return "linkReleases";
 	}
 
 	private final class FoDUnlinkedReleasesProcessor {

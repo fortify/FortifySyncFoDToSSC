@@ -99,60 +99,114 @@ logging:
     com.fortify.sync.fod_ssc: DEBUG
 
 sync:
+  # Define FoD and SSC connections
   connections:
     fod:
-      baseUrl: https://api.{region}.fortify.com
-      tenant: {FoD tenant}
-      userName: {FoD user}
-      password: {FoD password or PAT}
+      baseUrl: https://emea.fortify.com # Use appropriate ams/apj/emea domain
+      tenant: ${FOD_TENANT} # Get from environment variable
+      userName: ${FOD_USER} # Get from environment variable
+      password: ${FOD_PWD}  # Get from environment variable
+      
       # Configure the number of retries if FoD rate limit is exceeded
-      # If user configured above is only used for this integration,
-      # this can be left at the default (1). If user is also used
+      # If userName configured above is only used for this integration,
+      # this can be left at the default (1). If userName is also used
       # by other integrations, you may want to increase this to retry
-      # multiple times if the other integration is assigned a free 
+      # multiple times in case the other integration is assigned a free 
       # rate limit slot
       #rateLimitMaxRetries: 1
+      
+      # Configure the proxy if necessary
       #proxy:
       #  url: {proxy URL}
       #  userName: {optional proxy user}
       #  password: {password for proxy user}
     ssc:
-      baseUrl: {SSC URL}
-      userName: {SSC user}
-      password: {SSC password}
-  jobs:
+      baseUrl: ${SSC_URL} # Get from environment variable
+      userName: ${SSC_USER} # Get from environment variable
+      password: ${SSC_PWD} # Get from environment variable
+  
+  # Configuration for the various tasks
+  tasks:
+    
+    # Configuration for syncScans task
     syncScans:
-      schedule: '0 */1 * * * *'
+      # Configure the schedule for running the syncScans task
+      # This example runs every 7 seconds; you probably want to reduce this
+      cronSchedule: '*/7 * * * * *'
+      
+    # Configuration for the linkReleases task
     linkReleases:
-      schedule: '30 */1 * * * *'
+      # Configure the schedule for running the linkReleases task
+      # This example runs once per minute; you probably want to reduce this
+      cronSchedule: '0 * * * * *'
+      
+      # FoD-related configuration for the linkReleases task
       fod:
+        # Configure which FoD applications and releases should be taken
+        # into account for linking FoD releases to SSC application versions.
+        # Note that at least one filter property must be specified for both
+        # applications and releases, although the actual filter value may be
+        # empty.
         filters:
-          application:
-            fodFilterParam:
+        
+          application:  
+            # Have FoD filter the list of applications by passing the given value
+            # as FoD 'filter' request parameter
+            # fodFilterParam: applicationName:test 
+            
+            # Client-side filter based on SpEL predicate expressions; see 
+            # https://docs.spring.io/spring/docs/5.2.1.RELEASE/spring-framework-reference/core.html#expressions-language-ref
+            # Expressions can reference FoD application properties and application
+            # attributes. This example only takes applications into account for 
+            # which the custom 'SyncWithSSC' application attribute has been set 
+            # to 'True'.
             filterExpressions:
             - attributesMap['SyncWithSSC'] == 'True'
-            #- applicationName == 'wg'
+            #  - applicationName == 'test'
+          
           release:
-            fodFilterParam:
+            # Have FoD filter the list of releases by passing the given value
+            # as FoD 'filter' request parameter
+            # fodFilterParam: releaseName:5.0
+            
+            # Similar to application filter expressions, allows for filtering
+            # based on FoD release properties. This example only takes releases
+            # into account that have either static or dynamic scan results.
             filterExpressions:
             - staticScanDate!=null || dynamicScanDate!=null
-            #- releaseName matches '5.0'
+            #  - releaseName matches '5.0'
+            
+            # For each matching application, link only the first release that matches
+            # the filters above, based on the configured order by property and direction.
             onlyFirst:
               orderBy: releaseCreatedDate
               direction: DESC
+      
+      # SSC-related configuration for the linkReleases task
       ssc:
         autoCreateVersions: 
+          # If enabled, automatically create new SSC application versions for FoD releases 
+          # that match the FoD filter criteria defined above. If disabled, FoD releases will
+          # only be linked if the corresponding SSC application version already exists.
           enabled: true
+          
+          # For newly created SSC application versions, configure which FoD scan types should
+          # be synchronized by default.
           enabledFoDScanTypes: 
+          
           - Static
           - Dynamic
+          #- Mobile # FoD REST API does not yet allow for downloading Mobile scan results
+          
+          # Configure the issue template name to be used for newly created SSC application versions.
           issueTemplateName: Prioritized High Risk Issue Template
 ```
 
-The `schedule` property is in extended cron format, using 6 fields to specify
+The `cronSchedule` property is in extended cron format, using 6 fields to specify
 second, minute, hour, day of month, month, and day of week. To disable either 
 the `syncScans` or `linkReleases` you can either remove/comment out the 
-corresponding `schedule` property, or specify '-' as the property value.
+corresponding `cronSchedule` property, or specify '-' as the property value. See
+https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html for more information about the supported cron format.
 
 ### Running the utility
 

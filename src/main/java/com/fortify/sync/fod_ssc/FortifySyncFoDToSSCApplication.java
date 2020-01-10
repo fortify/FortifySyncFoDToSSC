@@ -84,7 +84,7 @@ public class FortifySyncFoDToSSCApplication {
 	 * @return
 	 */
 	@Bean
-	@ConfigurationProperties("sync.jobs.link-releases")
+	@ConfigurationProperties("sync.tasks.link-releases")
 	public LinkReleasesTaskConfig configLinkReleasesTask() {
 		return new LinkReleasesTaskConfig();
 	}
@@ -95,7 +95,7 @@ public class FortifySyncFoDToSSCApplication {
 	 * @return
 	 */
 	@Bean
-	@ConfigurationProperties("sync.jobs.sync-scans")
+	@ConfigurationProperties("sync.tasks.sync-scans")
 	public SyncScansTaskConfig configSyncScansTask() {
 		return new SyncScansTaskConfig();
 	}

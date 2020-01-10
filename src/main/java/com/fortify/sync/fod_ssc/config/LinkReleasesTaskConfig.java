@@ -26,6 +26,7 @@ package com.fortify.sync.fod_ssc.config;
 
 import com.fortify.client.fod.api.query.builder.FoDOrderByDirection;
 import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
+import com.fortify.sync.fod_ssc.task.LinkReleasesTask;
 import com.fortify.util.spring.expression.SimpleExpression;
 
 import lombok.Data;
@@ -39,8 +40,8 @@ import lombok.Data;
  *
  */
 @Data
-public class LinkReleasesTaskConfig {
-	private String schedule = "0 0 1 * * *"; // Currently not used, as task references property directly
+public class LinkReleasesTaskConfig implements IScheduleConfig {
+	private String cronSchedule = "-";
 	private ConfigJobLinkReleasesFoD fod = new ConfigJobLinkReleasesFoD();
 	private ConfigJobLinkReleasesSSC ssc = new ConfigJobLinkReleasesSSC();
 	

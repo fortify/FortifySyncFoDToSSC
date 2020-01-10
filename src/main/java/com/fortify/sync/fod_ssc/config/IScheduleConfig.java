@@ -24,20 +24,18 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
-import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
-import com.fortify.sync.fod_ssc.task.SyncScansTask;
-
-import lombok.Data;
-
 /**
- * This {@link Data} class holds the configuration for {@link SyncScansTask}.
- * This configuration is automatically loaded from the configuration file by
- * {@link FortifySyncFoDToSSCApplication#configSyncScansTask()}.
- *  
+ * Interface for retrieving scheduling information.
+ * 
  * @author Ruud Senden
  *
  */
-@Data
-public class SyncScansTaskConfig implements IScheduleConfig {
-	private String cronSchedule = "-";
+public interface IScheduleConfig {
+	/**
+	 * Get the cron schedule; see https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html
+	 * for supported formats.
+	 * 
+	 * @return
+	 */
+	public String getCronSchedule();
 }

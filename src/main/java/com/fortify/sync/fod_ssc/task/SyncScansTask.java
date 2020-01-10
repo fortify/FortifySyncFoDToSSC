@@ -35,8 +35,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.fortify.client.fod.api.FoDReleaseAPI;
@@ -48,29 +46,26 @@ import com.fortify.sync.fod_ssc.util.SyncHelper.ScanStatus;
 import com.fortify.sync.fod_ssc.util.SyncHelper.SyncData;
 import com.fortify.util.rest.json.JSONMap;
 
-//TODO Get schedule from injected config, instead of directly from property (for @Scheduled and @ContionalOnExpression)?
 @Component
-//Only load bean if schedule is defined and not equal to '-'
-@ConditionalOnExpression("'${sync.jobs.syncScans.schedule:-}'!='-'")
-public class SyncScansTask {
+public class SyncScansTask extends AbstractScheduledTask {
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private final SyncHelper syncHelper;
 
 	@Autowired
 	public SyncScansTask(SyncScansTaskConfig config, SyncHelper syncHelper) {
+		super(config);
 		this.syncHelper = syncHelper;
 		LOG.info("syncScans task configuration: {}", config);
 	}
+
+	public void runTask() {
+		syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
+	}
 	
-	@Scheduled(cron="${sync.jobs.syncScans.schedule}")
-	public void syncScans() {
-		LOG.info("Running syncScans task");
-		try {
-			syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
-		} finally {
-			LOG.debug("Completed syncScans task");
-		}
+	@Override
+	protected String getTaskName() {
+		return "syncScans";
 	}
 	
 	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {
