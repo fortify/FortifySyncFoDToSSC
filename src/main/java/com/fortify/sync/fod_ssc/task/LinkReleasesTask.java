@@ -37,16 +37,18 @@ import com.fortify.client.fod.api.FoDApplicationAPI;
 import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.api.query.builder.FoDApplicationsQueryBuilder;
 import com.fortify.client.fod.api.query.builder.FoDReleasesQueryBuilder;
+import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI.CreateApplicationVersionBuilder;
 import com.fortify.client.ssc.api.SSCAttributeAPI;
+import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigApplicationFilters;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigAutoCreate;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigReleaseFilters;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.OrderBy;
-import com.fortify.sync.fod_ssc.util.SyncHelper;
-import com.fortify.sync.fod_ssc.util.SyncHelper.LinkedVersionsAndReleasesIds;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI.LinkedVersionsAndReleasesIds;
 import com.fortify.util.rest.json.JSONMap;
 import com.fortify.util.rest.json.preprocessor.enrich.JSONMapEnrichWithValue;
 import com.fortify.util.rest.json.preprocessor.filter.AbstractJSONMapFilter.MatchMode;
@@ -54,30 +56,28 @@ import com.fortify.util.rest.json.preprocessor.filter.JSONMapFilterSpEL;
 import com.fortify.util.spring.expression.SimpleExpression;
 
 @Component
-public class LinkReleasesTask extends AbstractScheduledTask {
+public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConfig> {
 	private static final Logger LOG = LoggerFactory.getLogger(LinkReleasesTask.class);
-	private final SyncHelper syncHelper;
-	private final LinkReleasesTaskConfig config;
+	@Autowired private LinkReleasesTaskConfig config;
+	@Autowired private FoDAuthenticatingRestConnection fodConn;
+	@Autowired private SSCAuthenticatingRestConnection sscConn;
 	
-	@Autowired
-	public LinkReleasesTask(LinkReleasesTaskConfig config, SyncHelper syncHelper) {
-		super(config);
-		this.config = config;
-		this.syncHelper = syncHelper;
-		LOG.info("{} configuration: {}", getTaskName(), config);
+	@Override
+	protected LinkReleasesTaskConfig getConfig() {
+		return config;
 	}
 	
-	public void runTask() {
+	protected void runTask() {
 		new FoDUnlinkedReleasesProcessor().processFoDApplications();
 	}
 
 	private final class FoDUnlinkedReleasesProcessor {
-		private final LinkedVersionsAndReleasesIds linkedVersionsAndReleasesIds = syncHelper.getLinkedVersionsAndReleasesIds();
+		private final LinkedVersionsAndReleasesIds linkedVersionsAndReleasesIds = sscConn.api(SyncAPI.class).getLinkedVersionsAndReleasesIds();
 		
 		private void processFoDApplications() {
 			LOG.debug("Loading applications");
 			ConfigApplicationFilters applicationFilters = config.getFod().getFilters().getApplication();
-			FoDApplicationsQueryBuilder qb = syncHelper.getFodConn().api(FoDApplicationAPI.class).queryApplications()
+			FoDApplicationsQueryBuilder qb = fodConn.api(FoDApplicationAPI.class).queryApplications()
 					.onDemandAll()
 					.paramFilterAnd(applicationFilters.getFodFilterParam());
 			if ( applicationFilters.getFilterExpressions()!=null ) {
@@ -91,7 +91,7 @@ public class LinkReleasesTask extends AbstractScheduledTask {
 		
 		private void processFoDApplication(JSONMap application) {
 			ConfigReleaseFilters releaseFilters = config.getFod().getFilters().getRelease();
-			FoDReleasesQueryBuilder qb = syncHelper.getFodConn().api(FoDReleaseAPI.class).queryReleases()
+			FoDReleasesQueryBuilder qb = fodConn.api(FoDReleaseAPI.class).queryReleases()
 				.onDemandAll()
 				.paramFilterAnd("applicationId", application.get("applicationId", String.class))
 				.paramFilterAnd(releaseFilters.getFodFilterParam())
@@ -125,7 +125,7 @@ public class LinkReleasesTask extends AbstractScheduledTask {
 			String fodReleaseName = release.getPath("releaseName", String.class);
 			LOG.debug("Processing unlinked FoD release {}:{}", release.getPath("application.applicationName",String.class), release.getPath("releaseName",String.class));
 			
-			JSONMap sscApplicationVersion = syncHelper.getSscConn().api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseName, false);
+			JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseName, false);
 			if ( sscApplicationVersion==null ) {
 				processprocessUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(release);
 			} else {
@@ -144,7 +144,7 @@ public class LinkReleasesTask extends AbstractScheduledTask {
 			} else {
 				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
 	
-				CreateApplicationVersionBuilder createVersionBuilder = syncHelper.getSscConn().api(SSCApplicationVersionAPI.class).createApplicationVersion()
+				CreateApplicationVersionBuilder createVersionBuilder = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
 					.applicationName(fodApplicationName).versionName(fodReleaseName)
 					.versionDescription("Automatically created for FoD Release")
 					.autoAddRequiredAttributes(true)
@@ -170,7 +170,7 @@ public class LinkReleasesTask extends AbstractScheduledTask {
 					sscApplicationVersionId, fodReleaseId);
 			} else {
 				LOG.debug("Linking existing SSC application version id {} to FoD release id {}", sscApplicationVersionId, fodReleaseId);
-				syncHelper.getSscConn().api(SSCAttributeAPI.class).updateApplicationVersionAttributes(
+				sscConn.api(SSCAttributeAPI.class).updateApplicationVersionAttributes(
 						sscApplicationVersionId, getAttributesMap(fodReleaseId));
 			}
 			

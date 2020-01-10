@@ -38,43 +38,58 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.fortify.client.fod.api.FoDReleaseAPI;
+import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCArtifactAPI;
+import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.Constants;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
-import com.fortify.sync.fod_ssc.util.SyncHelper;
-import com.fortify.sync.fod_ssc.util.SyncHelper.ScanStatus;
-import com.fortify.sync.fod_ssc.util.SyncHelper.SyncData;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI.SyncConfigPredicate;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncConfig;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncData;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SyncStatus;
 import com.fortify.util.rest.json.JSONMap;
 
 @Component
-public class SyncScansTask extends AbstractScheduledTask {
+public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-	private final SyncHelper syncHelper;
+	@Autowired private SyncScansTaskConfig config;
+	@Autowired private FoDAuthenticatingRestConnection fodConn;
+	@Autowired private SSCAuthenticatingRestConnection sscConn;
 
-	@Autowired
-	public SyncScansTask(SyncScansTaskConfig config, SyncHelper syncHelper) {
-		super(config);
-		this.syncHelper = syncHelper;
-		LOG.info("{} configuration: {}", getTaskName(), config);
+	@Override
+	protected SyncScansTaskConfig getConfig() {
+		return config;
 	}
 
 	public void runTask() {
-		syncHelper.processSyncedApplicationVersionsAndFoDReleases(this::processSyncedApplicationVersions);
+		sscConn.api(SyncAPI.class).processSyncData(this::processSyncedApplicationVersions, SyncConfigPredicate.IS_SYNC_ENABLED);
 	}
 	
-	private final void processSyncedApplicationVersions(SyncData syncData, JSONMap fodRelease) {
-		String sscApplicationVersionId = syncData.getApplicationVersionId();
+	private final void processSyncedApplicationVersions(SyncData syncData) {
+		SyncConfig syncConfig = syncData.getSyncConfig();
+		SyncStatus syncStatus = syncData.getSyncStatus();
+		JSONMap fodRelease = getFodRelease(syncConfig.getFodReleaseId());
+		String sscApplicationVersionId = syncConfig.getApplicationVersionId();
 		String fodReleaseId = fodRelease.get("releaseId",String.class);
-		ScanStatus scanStatus = syncData.getScanStatus().newIfDifferentFoDReleaseId(fodReleaseId);
-		String[] scanTypes = syncData.getIncludedScanTypes();
-		processSyncedApplicationVersion(sscApplicationVersionId, fodRelease, scanTypes, scanStatus);
-		syncHelper.updateSyncStatus(sscApplicationVersionId, scanStatus);
+		syncStatus = syncStatus.newIfDifferentFoDReleaseId(fodReleaseId);
+		String[] scanTypes = syncConfig.getIncludedScanTypes();
+		processSyncedApplicationVersion(sscApplicationVersionId, fodRelease, scanTypes, syncStatus);
+		syncStatus.updateApplicationVersion(sscConn, sscApplicationVersionId);
+	}
+
+	private final JSONMap getFodRelease(String fodReleaseId) {
+		return fodConn.api(FoDReleaseAPI.class)
+				.queryReleases()
+				.releaseId(fodReleaseId)
+				.paramFields("releaseId", "applicationName", "releaseName", "staticScanDate", "dynamicScanDate", "mobileScanDate")
+				.build().getUnique();
 	}
 
 	protected void processSyncedApplicationVersion(
 			String sscApplicationVersionId, JSONMap fodRelease,
-			String[] scanTypes, ScanStatus scanStatus) {
+			String[] scanTypes, SyncStatus scanStatus) {
 		for ( String scanType : scanTypes ) {
 			Date fodScanDate = getFoDScanDate(fodRelease, scanType);
 			Date oldScanDate = scanStatus.getScanDate(scanType);
@@ -85,9 +100,9 @@ public class SyncScansTask extends AbstractScheduledTask {
 					// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
 					String fodReleaseId = fodRelease.get("releaseId",String.class);
 					LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
-					syncHelper.getFodConn().api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
+					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
 					LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
-					syncHelper.getSscConn().api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
+					sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
 					scanStatus.setScanDate(scanType, fodScanDate);
 				} catch (RuntimeException e) {
 					// We catch the exception here in order to allow other scan types to be processed,

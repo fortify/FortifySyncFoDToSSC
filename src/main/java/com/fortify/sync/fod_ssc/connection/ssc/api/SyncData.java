@@ -22,34 +22,52 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
  * IN THE SOFTWARE.
  ******************************************************************************/
-package com.fortify.sync.fod_ssc.util;
+package com.fortify.sync.fod_ssc.connection.ssc.api;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fortify.util.rest.json.JSONMap;
 
 /**
- * Factory class that provides a default {@link ObjectMapper} instance.
+ * This data class provides access to the {@link SyncConfig} and {@link SyncStatus}
+ * instances for the given SSC application version.
  * 
  * @author Ruud Senden
  *
  */
-public class DefaultObjectMapperFactory {
-	private static final ObjectMapper DEFAULT_OBJECT_MAPPER = _getDefaultObjectMapper();
-	
-	public static final ObjectMapper getDefaultObjectMapper() {
-		return DEFAULT_OBJECT_MAPPER;
+public class SyncData {
+	private final JSONMap sscApplicationVersion;
+	private SyncConfig syncConfig;
+	private SyncStatus syncStatus;
+
+	/**
+	 * Constructor for setting the current SSC application version JSON data
+	 * @param sscApplicationVersion
+	 */
+	public SyncData(JSONMap sscApplicationVersion) {
+		this.sscApplicationVersion = sscApplicationVersion;
 	}
 	
 	/**
-	 * <p>This method returns a default {@link ObjectMapper} instance used for
-	 * mapping JSON data to Java objects/values. This is mostly a default
-	 * {@link ObjectMapper} configuration, apart from the following:</p>
-	 * 
-	 * <ul>
-	 *  <li>Configured to not fail on missing properties</li>
-	 * </ul>
+	 * Provide lazy access to the {@link SyncConfig} instance for the configured 
+	 * application version.
+	 * @return
 	 */
-	private static final ObjectMapper _getDefaultObjectMapper() {
-		return new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	public SyncConfig getSyncConfig() {
+		if ( syncConfig==null ) {
+			syncConfig = SyncConfig.getFromApplicationVersion(sscApplicationVersion);
+		}
+		return syncConfig;
 	}
+	
+	/**
+	 * Provide lazy access to the {@link SyncStatus} instance for the configured 
+	 * application version.
+	 * @return
+	 */
+	public SyncStatus getSyncStatus() {
+		if ( syncStatus==null ) {
+			syncStatus = SyncStatus.getFromApplicationVersion(sscApplicationVersion);
+		}
+		return syncStatus;
+	}
+
 }

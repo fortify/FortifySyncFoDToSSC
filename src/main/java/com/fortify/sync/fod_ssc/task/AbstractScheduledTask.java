@@ -44,36 +44,26 @@ import com.fortify.sync.fod_ssc.config.IScheduleConfig;
  * @author Ruud Senden
  *
  */
-public abstract class AbstractScheduledTask implements Runnable {
+public abstract class AbstractScheduledTask<C extends IScheduleConfig> implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractScheduledTask.class);
 	private final String DEFAULT_TASK_NAME = this.getClass().getSimpleName();
-	private final String schedule;
 	@Autowired private TaskScheduler scheduler;
-	
-	/**
-	 * Subclasses will need to pass an {@link IScheduleConfig} instance that
-	 * describes the schedule for running the task. The {@link #postConstruct()}
-	 * method will use this information to actually set up the scheduled task. 
-	 * 
-	 * @param config {@link IScheduleConfig} instance
-	 */
-	protected AbstractScheduledTask(IScheduleConfig config) {
-		this.schedule = config.getCronSchedule();
-	}
 	
 	/**
 	 * Set up scheduled task execution if a valid schedule has been configured.  
 	 */
 	@PostConstruct
 	public void postConstruct() {
-		if ("-".equals(StringUtils.defaultIfBlank(schedule,"-")) ) {
+		LOG.info("{} configuration: {}", getTaskName(), getConfig());
+		String cronSchedule = getConfig().getCronSchedule();
+		if ("-".equals(StringUtils.defaultIfBlank(cronSchedule,"-")) ) {
 			LOG.warn("No schedule defined for {}; task will not be run automatically", getTaskName());
 		} else {
-			LOG.info("Schedule for {}: {}", getTaskName(), schedule);
-			scheduler.schedule(this, new CronTrigger(schedule));
+			LOG.info("Schedule for {}: {}", getTaskName(), cronSchedule);
+			scheduler.schedule(this, new CronTrigger(cronSchedule));
 		}
 	}
-	
+
 	/**
 	 * This method is invoked by the scheduler; it logs start and end of scheduled task
 	 * execution, invoking the abstract {@link #runTask()} method to have subclasses
@@ -104,5 +94,9 @@ public abstract class AbstractScheduledTask implements Runnable {
 	 */
 	protected abstract void runTask();
 	
-	
+	/**
+	 * Subclasses need to implement this method to return an {@link IScheduleConfig} instance.
+	 * @return
+	 */
+	protected abstract IScheduleConfig getConfig();
 }
