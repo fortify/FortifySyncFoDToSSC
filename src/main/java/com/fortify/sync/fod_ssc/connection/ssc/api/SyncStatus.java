@@ -65,6 +65,7 @@ import lombok.Setter;
  */
 @Data
 public final class SyncStatus {
+	public static final String SSC_ATTR_FOD_SYNC_STATUS = "FoD Sync - Status";
 	private static final Logger LOG = LoggerFactory.getLogger(SyncAPI.class);
 	private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	
@@ -75,14 +76,14 @@ public final class SyncStatus {
 	
 	public static final SyncStatus getFromApplicationVersion(JSONMap sscApplicationVersion) {
 		JSONMap attributeValuesByName = sscApplicationVersion.get("attributeValuesByName", JSONMap.class);
-		return parse(attributeValuesByName.get("FoD Sync - Status", String.class));
+		return parse(attributeValuesByName.get(SSC_ATTR_FOD_SYNC_STATUS, String.class));
 	}
 	
 	public final void updateApplicationVersion(SSCAuthenticatingRestConnection sscConn, String sscApplicationVersionId) {
 		if ( isModified() ) {
 			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
-			attributes.add("FoD Sync - Status", asSyncStatusString());
+			attributes.add(SSC_ATTR_FOD_SYNC_STATUS, asSyncStatusString());
 			sscConn.api(SSCAttributeAPI.class)
 				.updateApplicationVersionAttributes(sscApplicationVersionId, attributes);
 		}

@@ -50,6 +50,22 @@ import com.fortify.sync.fod_ssc.connection.ssc.api.SyncData;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncStatus;
 import com.fortify.util.rest.json.JSONMap;
 
+/**
+ * This task is responsible for downloading scans from FoD and uploading them to SSC.
+ * The schedule for running this task is configured using {@link SyncScansTaskConfig}.
+ * All other relevant configuration is stored as SSC application version attributes:
+ * <ul>
+ *  <li><code>{@value SyncConfig#SSC_ATTR_FOD_RELEASE_ID}</code>: 
+ *      The FoD release id with which the current SSC application version should be synchronized</li>
+ *  <li><code>{@value SyncConfig#SSC_ATTR_INCLUDE_FOD_SCAN_TYPES}</code>: 
+ *      The scan types to be synchronized (Static/Dynamic, and Mobile once supported by FoD)</li>
+ *  <li><code>{@value SyncStatus#SSC_ATTR_FOD_SYNC_STATUS}</code>: 
+ *      The current synchronization status, as stored during the last sync</li>
+ * </ul> 
+ * 
+ * @author Ruud Senden
+ *
+ */
 @Component
 public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
@@ -58,27 +74,115 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
 
+	/**
+	 * Allow our superclass to access our configuration
+	 */
 	@Override
 	protected SyncScansTaskConfig getConfig() {
 		return config;
 	}
 
-	public void runTask() {
-		sscConn.api(SyncAPI.class).processSyncData(this::processSyncedApplicationVersions, SyncConfigPredicate.IS_SYNC_ENABLED);
+	/**
+	 * This method is called by our superclass based on the configured schedule. Based on the functionality
+	 * provided by {@link SyncAPI}, this method will call the {@link #processSyncedApplicationVersion(SyncData)}
+	 * method for every SSC Application version for which sync is enabled. 
+	 */
+	protected void runTask() {
+		sscConn.api(SyncAPI.class).processSyncData(this::processSyncedApplicationVersion, SyncConfigPredicate.IS_SYNC_ENABLED);
 	}
 	
-	private final void processSyncedApplicationVersions(SyncData syncData) {
+	/**
+	 * Invoke the {@link #processSyncedApplicationVersion(SyncConfig, SyncStatus)} method with
+	 * the appropriate {@link SyncConfig} and {@link SyncStatus}, retrieved from the given 
+	 * {@link SyncData}.
+	 * 
+	 * @param syncData
+	 */
+	private final void processSyncedApplicationVersion(SyncData syncData) {
 		SyncConfig syncConfig = syncData.getSyncConfig();
-		SyncStatus syncStatus = syncData.getSyncStatus();
-		JSONMap fodRelease = getFodRelease(syncConfig.getFodReleaseId());
+		SyncStatus syncStatus = syncData.getSyncStatus().newIfDifferentFoDReleaseId(syncConfig.getFodReleaseId());
+		processSyncedApplicationVersion(syncConfig, syncStatus);
+	}
+
+	/**
+	 * If there are any scan types to be synchronized according to the given {@link SyncConfig}, 
+	 * this method will retrieve the FoD release to be synchronized, and then call the 
+	 * {@link #syncScanTypeIfNecessary(String, JSONMap, SyncStatus, String)} for each scan
+	 * type.
+	 * 
+	 * @param syncConfig
+	 * @param syncStatus
+	 */
+	private final void processSyncedApplicationVersion(SyncConfig syncConfig, SyncStatus syncStatus) {
 		String sscApplicationVersionId = syncConfig.getApplicationVersionId();
-		String fodReleaseId = fodRelease.get("releaseId",String.class);
-		syncStatus = syncStatus.newIfDifferentFoDReleaseId(fodReleaseId);
 		String[] scanTypes = syncConfig.getIncludedScanTypes();
-		processSyncedApplicationVersion(sscApplicationVersionId, fodRelease, scanTypes, syncStatus);
+		if ( scanTypes!=null && scanTypes.length > 0 ) {
+			JSONMap fodRelease = getFodRelease(syncConfig.getFodReleaseId());
+			for ( String scanType : scanTypes ) {
+				try {
+					syncScanTypeIfNecessary(sscApplicationVersionId, fodRelease, syncStatus, scanType);
+				} catch (RuntimeException e) {
+					// We catch the exception here in order to allow other scan types to be processed,
+					// and scan status to be updated for successfully processed scan types.
+					LOG.error("Error processing scan type "+scanType,e);
+				} 
+			}
+		}
 		syncStatus.updateApplicationVersion(sscConn, sscApplicationVersionId);
 	}
 
+	/**
+	 * Compare the current FoD scan date for the given scan type with the current sync status. If
+	 * the given scan type was not uploaded to SSC before, or current FoD scan date is after the
+	 * scan date of the previously uploaded scan, the {@link #syncScanType(String, JSONMap, String)}
+	 * method will be called to download latest scan results from FoD and upload to SSC, and the
+	 * current sync status will be updated with the current FoD scan date. 
+	 *  
+	 * @param sscApplicationVersionId
+	 * @param fodRelease
+	 * @param syncStatus
+	 * @param scanType
+	 */
+	private final void syncScanTypeIfNecessary(String sscApplicationVersionId, JSONMap fodRelease, SyncStatus syncStatus, String scanType) {
+		Date fodScanDate = getFoDScanDate(fodRelease, scanType);
+		Date oldScanDate = syncStatus.getScanDate(scanType);
+		LOG.debug("[{} - {}] Scan type {}: current scan date {}, previous scan date {}", fodRelease.get("applicationName", String.class), fodRelease.get("releaseName", String.class), scanType, fodScanDate, oldScanDate);
+		if ( fodScanDate!=null && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
+			syncScanType(sscApplicationVersionId, fodRelease, scanType);
+			syncStatus.setScanDate(scanType, fodScanDate);
+		}
+	}
+
+	/**
+	 * Download the given scan type from the given FoD release, and upload the scan to the given
+	 * SSC application version.
+	 * 
+	 * @param sscApplicationVersionId
+	 * @param fodRelease
+	 * @param scanType
+	 */
+	private final void syncScanType(String sscApplicationVersionId, JSONMap fodRelease, String scanType) {
+		Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
+		try {
+			// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
+			String fodReleaseId = fodRelease.get("releaseId",String.class);
+			LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
+			fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
+			LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
+			sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
+		} finally {
+			if ( tempFile.toFile().exists() ) {
+				tempFile.toFile().delete();
+			}
+		}
+	}
+	
+	/**
+	 * Get the FoD release JSON object for the given FoD release id. The returned {@link JSONMap} will
+	 * contain the FoD release id, application name, release name, and static/dynamic/mobile scan dates.
+	 * @param fodReleaseId
+	 * @return
+	 */
 	private final JSONMap getFodRelease(String fodReleaseId) {
 		return fodConn.api(FoDReleaseAPI.class)
 				.queryReleases()
@@ -86,41 +190,23 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 				.paramFields("releaseId", "applicationName", "releaseName", "staticScanDate", "dynamicScanDate", "mobileScanDate")
 				.build().getUnique();
 	}
-
-	protected void processSyncedApplicationVersion(
-			String sscApplicationVersionId, JSONMap fodRelease,
-			String[] scanTypes, SyncStatus scanStatus) {
-		for ( String scanType : scanTypes ) {
-			Date fodScanDate = getFoDScanDate(fodRelease, scanType);
-			Date oldScanDate = scanStatus.getScanDate(scanType);
-			LOG.debug("[{} - {}] Scan type {}: current scan date {}, previous scan date {}", fodRelease.get("applicationName", String.class), fodRelease.get("releaseName", String.class), scanType, fodScanDate, oldScanDate);
-			if ( fodScanDate!=null && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
-				Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
-				try {
-					// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
-					String fodReleaseId = fodRelease.get("releaseId",String.class);
-					LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
-					fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
-					LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
-					sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
-					scanStatus.setScanDate(scanType, fodScanDate);
-				} catch (RuntimeException e) {
-					// We catch the exception here in order to allow other scan types to be processed,
-					// and scan status to be updated for successfully processed scan types.
-					LOG.error("Error processing scan type "+scanType,e);
-				} finally {
-					if ( tempFile.toFile().exists() ) {
-						tempFile.toFile().delete();
-					}
-				}
-			} 
-		}
-	}
 	
+	/**
+	 * Get and parse the [scanType]ScanDate property from the given release JSON object.
+	 * 
+	 * @param fodRelease
+	 * @param scanType
+	 * @return
+	 */
 	private static final Date getFoDScanDate(JSONMap fodRelease, String scanType) {
 		return parseFoDDate(fodRelease.get(scanType.toLowerCase()+"ScanDate", String.class));
 	}
 	
+	/**
+	 * Parse an FoD scan date according to the format defined by {@value #FMT_FOD_DATE}
+	 * @param dateString
+	 * @return
+	 */
 	private static final Date parseFoDDate(String dateString) {
 		if ( dateString == null ) { return null; }
 		try {

@@ -46,6 +46,8 @@ import lombok.Data;
  */
 @Data
 public final class SyncConfig {
+	public static final String SSC_ATTR_INCLUDE_FOD_SCAN_TYPES = "FoD Sync - Include Scan Types";
+	public static final String SSC_ATTR_FOD_RELEASE_ID = "FoD Sync - Release Id";
 	private final String applicationVersionId;
 	private final String fodReleaseId;
 	private final String[] includedScanTypes;
@@ -59,8 +61,8 @@ public final class SyncConfig {
 	private SyncConfig(JSONMap sscApplicationVersion) {
 		this.applicationVersionId = sscApplicationVersion.get("id", String.class);
 		JSONMap attributeValuesByName = sscApplicationVersion.get("attributeValuesByName", JSONMap.class);
-		this.fodReleaseId = attributeValuesByName.get("FoD Sync - Release Id", String.class);
-		this.includedScanTypes = attributeValuesByName.getOrCreateJSONList("FoD Sync - Include Scan Types").toArray(new String[]{});
+		this.fodReleaseId = attributeValuesByName.get(SSC_ATTR_FOD_RELEASE_ID, String.class);
+		this.includedScanTypes = attributeValuesByName.getOrCreateJSONList(SSC_ATTR_INCLUDE_FOD_SCAN_TYPES).toArray(new String[]{});
 	}
 	
 	/**
