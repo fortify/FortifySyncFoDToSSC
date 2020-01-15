@@ -30,6 +30,7 @@ import com.fortify.sync.fod_ssc.task.LinkReleasesTask;
 import com.fortify.util.spring.expression.SimpleExpression;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * This {@link Data} class holds the configuration for {@link LinkReleasesTask}.
@@ -46,26 +47,26 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
 	private ConfigJobLinkReleasesSSC ssc = new ConfigJobLinkReleasesSSC();
 	
     @Data public static class ConfigJobLinkReleasesFoD {
-    	private ConfigFoDFilters filters = new ConfigFoDFilters(); 
+    	private ConfigFoDQuery filters = new ConfigFoDQuery(); 
     }
     
     @Data public static class ConfigJobLinkReleasesSSC {
     	private ConfigAutoCreate autoCreateVersions = new ConfigAutoCreate();
     }
     
-    @Data public static class ConfigFoDFilters {
+    @Data public static class ConfigFoDQuery {
     	private ConfigApplicationFilters application = new ConfigApplicationFilters();
     	private ConfigReleaseFilters release = new ConfigReleaseFilters();
     } 
     
-    @Data public static class ConfigApplicationFilters {
+    @Data public static abstract class AbstractFoDQueryConfig {
     	private String fodFilterParam;
     	private SimpleExpression[] filterExpressions;
-    } 
+    }
     
-    @Data public static class ConfigReleaseFilters {
-    	private String fodFilterParam;
-    	private SimpleExpression[] filterExpressions;
+    @Data @EqualsAndHashCode(callSuper=true) public static class ConfigApplicationFilters extends AbstractFoDQueryConfig {} 
+    
+    @Data @EqualsAndHashCode(callSuper=true) public static class ConfigReleaseFilters extends AbstractFoDQueryConfig {
     	private OrderBy onlyFirst; 
     } 
     

@@ -40,6 +40,7 @@ public class FortifySyncFoDToSSCApplication {
 	public static void main(String[] args) {
 		Constants.setSystemProperties();
 		checkConfigFile();
+		createScansTempDir();
 		SpringApplication.run(FortifySyncFoDToSSCApplication.class, args);
 	}
 
@@ -55,6 +56,16 @@ public class FortifySyncFoDToSSCApplication {
 			throw new RuntimeException("Configuration file "+Constants.SYNC_CONFIG+" cannot be read");
 		}
 	}
+	
+	/**
+	 * Create the directory for temporarily holding scan data
+	 * if it does not yet exist.
+	 */
+	private static final void createScansTempDir() {
+		new File(Constants.SCANS_TEMP_DIR).mkdir();
+	}
+	
+	
 	
 	/**
 	 * Get a {@link FoDAuthenticatingRestConnectionBuilder} instance, automatically

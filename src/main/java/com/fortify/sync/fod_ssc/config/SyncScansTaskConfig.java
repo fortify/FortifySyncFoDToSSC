@@ -40,4 +40,5 @@ import lombok.Data;
 @Data
 public class SyncScansTaskConfig implements IScheduleConfig {
 	private String cronSchedule = "-";
+	private long deleteScansOlderThanMinutes = 0;
 }

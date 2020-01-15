@@ -135,7 +135,7 @@ public final class SyncAPI extends AbstractSSCAPI {
 		public void accept(SyncData syncData) {
 			SyncConfig syncConfig = syncData.getSyncConfig();
 			linkedFoDReleaseIds.add(syncConfig.getFodReleaseId());
-			linkedSSCApplicationVersionIds.add(syncConfig.getApplicationVersionId());
+			linkedSSCApplicationVersionIds.add(syncData.getSSCApplicationVersionId());
 		}
 	}
 	

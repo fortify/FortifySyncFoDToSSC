@@ -131,8 +131,15 @@ sync:
     # Configuration for syncScans task
     syncScans:
       # Configure the schedule for running the syncScans task
-      # This example runs every 7 seconds; you probably want to reduce this
-      cronSchedule: '*/7 * * * * *'
+      # This example runs once per minute; you probably want to reduce this
+      cronSchedule: '30 * * * * *'
+      
+      # Configure how long to keep scans downloaded from FoD, mainly
+      # for debugging purposes. Default value is 0, meaning scans will 
+      # be deleted immediately after uploading to SSC. If set to a 
+      # non-zero number, any matching scans will be deleted whenever
+      # the syncScans task runs.
+      # deleteScansOlderThanMinutes: 30
       
     # Configuration for the linkReleases task
     linkReleases:

@@ -24,7 +24,11 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.connection.ssc.api;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang.StringUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import com.fortify.util.rest.json.JSONMap;
 
@@ -46,23 +50,20 @@ import lombok.Data;
  */
 @Data
 public final class SyncConfig {
-	public static final String SSC_ATTR_INCLUDE_FOD_SCAN_TYPES = "FoD Sync - Include Scan Types";
-	public static final String SSC_ATTR_FOD_RELEASE_ID = "FoD Sync - Release Id";
-	private final String applicationVersionId;
+	private static final String SSC_ATTR_INCLUDE_FOD_SCAN_TYPES = "FoD Sync - Include Scan Types";
+	private static final String SSC_ATTR_FOD_RELEASE_ID = "FoD Sync - Release Id";
 	private final String fodReleaseId;
 	private final String[] includedScanTypes;
 	
 	/**
-	 * Private constructor to load sync configuration from the given SSC application version
-	 * instance.
+	 * Constructor for creating a new instance with the given FoD release id and included scan types.
 	 * 
-	 * @param sscApplicationVersion
+	 * @param fodReleaseId
+	 * @param includedScanTypes
 	 */
-	private SyncConfig(JSONMap sscApplicationVersion) {
-		this.applicationVersionId = sscApplicationVersion.get("id", String.class);
-		JSONMap attributeValuesByName = sscApplicationVersion.get("attributeValuesByName", JSONMap.class);
-		this.fodReleaseId = attributeValuesByName.get(SSC_ATTR_FOD_RELEASE_ID, String.class);
-		this.includedScanTypes = attributeValuesByName.getOrCreateJSONList(SSC_ATTR_INCLUDE_FOD_SCAN_TYPES).toArray(new String[]{});
+	public SyncConfig(String fodReleaseId, String[] includedScanTypes) {
+		this.fodReleaseId = fodReleaseId;
+		this.includedScanTypes = includedScanTypes;
 	}
 	
 	/**
@@ -73,7 +74,21 @@ public final class SyncConfig {
 	 * @return
 	 */
 	public static final SyncConfig getFromApplicationVersion(JSONMap sscApplicationVersion) {
-		return new SyncConfig(sscApplicationVersion);
+		JSONMap attributeValuesByName = sscApplicationVersion.get("attributeValuesByName", JSONMap.class);
+		String fodReleaseId = attributeValuesByName.get(SSC_ATTR_FOD_RELEASE_ID, String.class);
+		String[] includedScanTypes = attributeValuesByName.getOrCreateJSONList(SSC_ATTR_INCLUDE_FOD_SCAN_TYPES).toArray(new String[]{});
+		return new SyncConfig(fodReleaseId, includedScanTypes);
+	}
+	
+	/**
+	 * Get the current configuration as an SSC application version attributes map 
+	 * @return
+	 */
+	public final MultiValueMap<String,Object> asAttributesMap() {
+		MultiValueMap<String,Object> attributes = new LinkedMultiValueMap<>();
+		attributes.add(SSC_ATTR_FOD_RELEASE_ID, fodReleaseId);
+		attributes.addAll(SSC_ATTR_INCLUDE_FOD_SCAN_TYPES, Arrays.asList(includedScanTypes));
+		return attributes;
 	}
 	
 	/**

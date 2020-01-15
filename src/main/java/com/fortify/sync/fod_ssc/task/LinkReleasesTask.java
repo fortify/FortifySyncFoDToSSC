@@ -24,25 +24,25 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
-import java.util.Arrays;
-
+import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.fortify.client.fod.api.FoDApplicationAPI;
 import com.fortify.client.fod.api.FoDReleaseAPI;
+import com.fortify.client.fod.api.query.builder.AbstractFoDEntityQueryBuilder;
+import com.fortify.client.fod.api.query.builder.AbstractFoDEntityQueryBuilder.IFoDEntityQueryBuilderParamFilter;
 import com.fortify.client.fod.api.query.builder.FoDApplicationsQueryBuilder;
 import com.fortify.client.fod.api.query.builder.FoDReleasesQueryBuilder;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
-import com.fortify.client.ssc.api.SSCApplicationVersionAPI.CreateApplicationVersionBuilder;
 import com.fortify.client.ssc.api.SSCAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
+import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.AbstractFoDQueryConfig;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigApplicationFilters;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigAutoCreate;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigReleaseFilters;
@@ -110,17 +110,6 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		}
 		
 		/**
-		 * This method calls {@link #getApplicationsQueryBuilder()} to build an
-		 * {@link FoDApplicationsQueryBuilder} instance, then invokes the 
-		 * {@link #processFoDApplication(JSONMap)} method for each FoD application
-		 * loaded by this {@link FoDApplicationsQueryBuilder} instance.
-		 */
-		private final void processFoDApplications() {
-			LOG.debug("Loading applications");
-			getApplicationsQueryBuilder().build().processAll(this::processFoDApplication);
-		}
-
-		/**
 		 * Construct an {@link FoDApplicationsQueryBuilder} instance based on our
 		 * configuration.
 		 * 
@@ -128,29 +117,12 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 */
 		private final FoDApplicationsQueryBuilder getApplicationsQueryBuilder() {
 			ConfigApplicationFilters applicationFilters = config.getFod().getFilters().getApplication();
-			FoDApplicationsQueryBuilder qb = fodConn.api(FoDApplicationAPI.class).queryApplications()
-					.onDemandAll()
-					.paramFilterAnd(applicationFilters.getFodFilterParam());
-			if ( applicationFilters.getFilterExpressions()!=null ) {
-				for ( SimpleExpression expr : applicationFilters.getFilterExpressions()) {
-					qb.preProcessor(new JSONMapFilterSpEL(MatchMode.INCLUDE, expr));
-				}
-				// TODO (performance improvement) call qb.paramFields to have FoD return only fields referenced by the filter expressions 
-			}
+			FoDApplicationsQueryBuilder qb = fodConn.api(FoDApplicationAPI.class).queryApplications().onDemandAll();
+			addParamFilter(qb, applicationFilters);
+			addFilterExpressions(qb, applicationFilters);
 			return qb;
 		}
 		
-		/**
-		 * This method calls {@link #getReleasesQueryBuilder()} to build an
-		 * {@link FoDReleasesQueryBuilder} instance, then invokes the 
-		 * {@link #processFoDRelease(JSONMap)} method for each FoD release
-		 * loaded by this {@link FoDReleasesQueryBuilder} instance.
-		 */
-		private final void processFoDApplication(JSONMap application) {
-			LOG.debug("Loading releases for application "+application.get("applicationName", String.class));
-			getReleasesQueryBuilder(application).build().processAll(this::processFoDRelease);
-		}
-
 		/**
 		 * Construct an {@link FoDReleasesQueryBuilder} instance for the given application,
 		 * based on our configuration.
@@ -162,20 +134,69 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			FoDReleasesQueryBuilder qb = fodConn.api(FoDReleaseAPI.class).queryReleases()
 				.onDemandAll()
 				.paramFilterAnd("applicationId", application.get("applicationId", String.class))
-				.paramFilterAnd(releaseFilters.getFodFilterParam())
 				.preProcessor(new JSONMapEnrichWithValue("application", application));
+			addParamFilter(qb, releaseFilters);
+			addFilterExpressions(qb, releaseFilters);
+			addOnlyFirstFilter(qb, releaseFilters);
+			return qb;
+		}
+
+		/**
+		 * Add the FoD 'filter' query parameter
+		 * @param qb
+		 * @param queryConfig
+		 */
+		private final void addParamFilter(IFoDEntityQueryBuilderParamFilter<?> qb, AbstractFoDQueryConfig queryConfig) {
+			qb.paramFilterAnd(queryConfig.getFodFilterParam());
+		}
+		
+		/**
+		 * Add the FoD client-side filter expressions if applicable
+		 * @param qb
+		 * @param queryConfig
+		 */
+		private final void addFilterExpressions(AbstractFoDEntityQueryBuilder<?> qb, AbstractFoDQueryConfig queryConfig) {
+			if ( ArrayUtils.isNotEmpty(queryConfig.getFilterExpressions()) ) {
+				for ( SimpleExpression expr : queryConfig.getFilterExpressions()) {
+					qb.preProcessor(new JSONMapFilterSpEL(MatchMode.INCLUDE, expr));
+				}
+			}
+		}
+		
+		/**
+		 * Add query parameters and filters for processing only the first FoD release
+		 * that matches the other filters.
+		 * @param qb
+		 * @param releaseFilters
+		 */
+		private final void addOnlyFirstFilter(FoDReleasesQueryBuilder qb, ConfigReleaseFilters releaseFilters) {
 			OrderBy onlyFirst = releaseFilters.getOnlyFirst();
 			if ( onlyFirst!=null ) {
 				qb.maxResults(1)
 					.paramOrderBy(onlyFirst.getOrderBy(), onlyFirst.getDirection());
 			}
-			if ( releaseFilters.getFilterExpressions()!=null ) {
-				for ( SimpleExpression expr : releaseFilters.getFilterExpressions()) {
-					qb.preProcessor(new JSONMapFilterSpEL(MatchMode.INCLUDE, expr));
-				}
-				// TODO (performance improvement) call qb.paramFields to have FoD return only fields referenced by the filter expressions
-			}
-			return qb;
+		}
+		
+		/**
+		 * This method calls {@link #getApplicationsQueryBuilder()} to build an
+		 * {@link FoDApplicationsQueryBuilder} instance, then invokes the 
+		 * {@link #processFoDApplication(JSONMap)} method for each FoD application
+		 * loaded by this {@link FoDApplicationsQueryBuilder} instance.
+		 */
+		private final void processFoDApplications() {
+			LOG.debug("Loading applications");
+			getApplicationsQueryBuilder().build().processAll(this::processFoDApplication);
+		}
+		
+		/**
+		 * This method calls {@link #getReleasesQueryBuilder()} to build an
+		 * {@link FoDReleasesQueryBuilder} instance, then invokes the 
+		 * {@link #processFoDRelease(JSONMap)} method for each FoD release
+		 * loaded by this {@link FoDReleasesQueryBuilder} instance.
+		 */
+		private final void processFoDApplication(JSONMap application) {
+			LOG.debug("Loading releases for application "+application.get("applicationName", String.class));
+			getReleasesQueryBuilder(application).build().processAll(this::processFoDRelease);
 		}
 		
 		/**
@@ -245,22 +266,13 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 */
 		private void createLinkedSSCApplicationVersion(String sscApplicationName, String sscVersionName, String linkedFoDReleaseId) {
 			ConfigAutoCreate autoCreateVersionsConfig = config.getSsc().getAutoCreateVersions();
-			CreateApplicationVersionBuilder createVersionBuilder = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
+			sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
 				.applicationName(sscApplicationName).versionName(sscVersionName)
 				.versionDescription("Automatically created for FoD Release")
 				.autoAddRequiredAttributes(true)
-				// TODO Remove duplication with #getAttributesMap
-				// TODO Get all allowed options for 'Include Scan Types' from SSC
-				// TODO Get default issue template from SSC, allow override in config?
-				.attribute(SyncConfig.SSC_ATTR_FOD_RELEASE_ID, linkedFoDReleaseId)
-				.issueTemplateName(autoCreateVersionsConfig.getIssueTemplateName());
-			
-			for (String scanType : autoCreateVersionsConfig.getEnabledFoDScanTypes()) {
-				// TODO Remove duplication with #getAttributesMap
-				createVersionBuilder.attribute(SyncConfig.SSC_ATTR_INCLUDE_FOD_SCAN_TYPES, scanType);
-			}
-			
-			createVersionBuilder.execute();
+				.attributes(getSyncConfigAttributesMap(linkedFoDReleaseId))
+				.issueTemplateName(autoCreateVersionsConfig.getIssueTemplateName())
+				.execute();
 		}
 
 		/**
@@ -291,13 +303,8 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * @param fodReleaseId
 		 * @return
 		 */
-		// TODO Merge implementations for setting sync attrs for both 'update existing' and 
-		// 'create new' SSC application version into a single implementation
 		private final MultiValueMap<String, Object> getSyncConfigAttributesMap(String fodReleaseId) {
-			MultiValueMap<String,Object> attributes = new LinkedMultiValueMap<>();
-			attributes.add(SyncConfig.SSC_ATTR_FOD_RELEASE_ID, fodReleaseId);
-			attributes.addAll(SyncConfig.SSC_ATTR_INCLUDE_FOD_SCAN_TYPES, Arrays.asList(config.getSsc().getAutoCreateVersions().getEnabledFoDScanTypes()));
-			return attributes;
+			return new SyncConfig(fodReleaseId, config.getSsc().getAutoCreateVersions().getEnabledFoDScanTypes()).asAttributesMap();
 		}
 	}
 	

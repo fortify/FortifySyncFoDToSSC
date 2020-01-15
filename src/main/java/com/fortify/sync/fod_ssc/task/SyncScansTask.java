@@ -24,12 +24,13 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -68,8 +69,10 @@ import com.fortify.util.rest.json.JSONMap;
  */
 @Component
 public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
+	private static final String PFX_SCAN_FILE_NAME = "FoDScan-";
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	private static final SimpleDateFormat FMT_TIMESTAMP = new SimpleDateFormat("yyyyMMdd-HHmmss.SSS");
 	@Autowired private SyncScansTaskConfig config;
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
@@ -88,9 +91,34 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	 * method for every SSC Application version for which sync is enabled. 
 	 */
 	protected void runTask() {
-		sscConn.api(SyncAPI.class).processSyncData(this::processSyncedApplicationVersion, SyncConfigPredicate.IS_SYNC_ENABLED);
+		try {
+			sscConn.api(SyncAPI.class).processSyncData(this::processSyncedApplicationVersion, SyncConfigPredicate.IS_SYNC_ENABLED);
+		} finally {
+			deleteOldScans();
+		}
 	}
 	
+	/**
+	 * Delete scan files older than the configured number of minutes.
+	 */
+	private final void deleteOldScans() {
+		String[] filesToDelete = new File(Constants.SCANS_TEMP_DIR).list(scansToBeDeletedFilter);
+		for ( String fileToDelete : filesToDelete ) {
+			new File(Constants.SCANS_TEMP_DIR, fileToDelete).delete();
+		}
+	}
+	
+	/**
+	 * Anonymous {@link FilenameFilter} instance
+	 */
+	private final FilenameFilter scansToBeDeletedFilter = new FilenameFilter() {
+		@Override
+		public boolean accept(File dir, String name) {
+			return name.startsWith(PFX_SCAN_FILE_NAME) &&
+					new File(dir, name).lastModified() < System.currentTimeMillis() - config.getDeleteScansOlderThanMinutes()*1000*60;
+		}
+	};
+
 	/**
 	 * Invoke the {@link #processSyncedApplicationVersion(SyncConfig, SyncStatus)} method with
 	 * the appropriate {@link SyncConfig} and {@link SyncStatus}, retrieved from the given 
@@ -99,9 +127,10 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	 * @param syncData
 	 */
 	private final void processSyncedApplicationVersion(SyncData syncData) {
+		String sscApplicationVersionId = syncData.getSSCApplicationVersionId();
 		SyncConfig syncConfig = syncData.getSyncConfig();
 		SyncStatus syncStatus = syncData.getSyncStatus().newIfDifferentFoDReleaseId(syncConfig.getFodReleaseId());
-		processSyncedApplicationVersion(syncConfig, syncStatus);
+		processSyncedApplicationVersion(sscApplicationVersionId, syncConfig, syncStatus);
 	}
 
 	/**
@@ -113,8 +142,7 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	 * @param syncConfig
 	 * @param syncStatus
 	 */
-	private final void processSyncedApplicationVersion(SyncConfig syncConfig, SyncStatus syncStatus) {
-		String sscApplicationVersionId = syncConfig.getApplicationVersionId();
+	private final void processSyncedApplicationVersion(String sscApplicationVersionId, SyncConfig syncConfig, SyncStatus syncStatus) {
 		String[] scanTypes = syncConfig.getIncludedScanTypes();
 		if ( scanTypes!=null && scanTypes.length > 0 ) {
 			JSONMap fodRelease = getFodRelease(syncConfig.getFodReleaseId());
@@ -162,21 +190,23 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 	 * @param scanType
 	 */
 	private final void syncScanType(String sscApplicationVersionId, JSONMap fodRelease, String scanType) {
-		Path tempFile = Paths.get(Constants.SYNC_HOME, String.format("%s-%s.fpr", scanType, UUID.randomUUID()));
-		try {
-			// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
-			String fodReleaseId = fodRelease.get("releaseId",String.class);
-			LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
-			fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, tempFile);
-			LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
-			sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, tempFile.toFile());
-		} finally {
-			if ( tempFile.toFile().exists() ) {
-				tempFile.toFile().delete();
-			}
-		}
+		Path scanFile = Paths.get(Constants.SCANS_TEMP_DIR, getScanTempFileName(fodRelease, scanType));
+		// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
+		String fodReleaseId = fodRelease.get("releaseId",String.class);
+		LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);
+		fodConn.api(FoDReleaseAPI.class).saveFPR(fodReleaseId, scanType, scanFile);
+		LOG.info("Uploading {} scan to SSC application version id {}", scanType, sscApplicationVersionId);
+		sscConn.api(SSCArtifactAPI.class).uploadArtifact(sscApplicationVersionId, scanFile.toFile());
 	}
-	
+
+	private String getScanTempFileName(JSONMap fodRelease, String scanType) {
+		return String.format("%s%s-%s-%s-%s.fpr", 
+				PFX_SCAN_FILE_NAME,
+				fodRelease.get("applicationName", String.class), 
+				fodRelease.get("releaseName", String.class), 
+				scanType, FMT_TIMESTAMP.format(new Date()));
+	}
+
 	/**
 	 * Get the FoD release JSON object for the given FoD release id. The returned {@link JSONMap} will
 	 * contain the FoD release id, application name, release name, and static/dynamic/mobile scan dates.

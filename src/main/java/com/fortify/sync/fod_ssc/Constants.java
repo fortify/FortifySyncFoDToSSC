@@ -36,6 +36,7 @@ public class Constants {
 	public static final String FORTIFY_HOME = getFortifyHome();
 	public static final String SYNC_HOME = getSyncHome();
 	public static final String SYNC_CONFIG = getSyncHome()+"/config.yml";
+	public static final String SCANS_TEMP_DIR = getSyncHome()+"/scans";
 	
 	/**
 	 * Private constructor to disallow instantiation

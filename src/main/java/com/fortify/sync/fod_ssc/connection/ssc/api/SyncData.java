@@ -69,5 +69,9 @@ public class SyncData {
 		}
 		return syncStatus;
 	}
+	
+	public String getSSCApplicationVersionId() {
+		return sscApplicationVersion.get("id", String.class);
+	}
 
 }
