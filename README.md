@@ -216,7 +216,7 @@ sync:
           - Dynamic
           #- Mobile # FoD REST API does not yet allow for downloading Mobile scan results
           
-          # Ceate an SSC application version only if there are scans to be synchronized. If set
+          # Create an SSC application version only if there are scans to be synchronized. If set
           # to true (default), the utility will only create application versions for FoD releases
           # that have one of the scan types defined in the enabledFoDScanTypes property above,
           # and at least one of those scans is not older than the ignoreScansOlderThanDays 
