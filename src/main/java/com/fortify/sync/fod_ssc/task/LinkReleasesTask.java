@@ -69,6 +69,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 	@Autowired private LinkReleasesTaskConfig config;
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
+	@Autowired private IHasSyncableScanChecker hasSyncableScanChecker;
 	
 	/**
 	 * Allow our superclass to access our configuration
@@ -250,10 +251,20 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			
 			if ( !config.getSsc().getAutoCreateVersions().isEnabled() ) {
 				LOG.debug("SSC application version creation disabled; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
+			} else if ( config.getSsc().getAutoCreateVersions().isCreateOnlyIfSyncableScans() && !hasSyncableScans(release) ) {
+				LOG.debug("FoD release has no syncable scans; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
 			} else {
 				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
 				createLinkedSSCApplicationVersion(fodApplicationName, fodReleaseName, release.get("releaseId", String.class));
 			}
+		}
+
+		private boolean hasSyncableScans(JSONMap release) {
+			boolean result = false;
+			for ( String fodScanType : config.getSsc().getAutoCreateVersions().getEnabledFoDScanTypes() ) {
+				result |= hasSyncableScanChecker.hasSyncableScan(release, fodScanType);
+			}
+			return result;
 		}
 
 		/**

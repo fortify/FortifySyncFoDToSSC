@@ -77,6 +77,7 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
 
     @Data public static class ConfigAutoCreate {
     	private boolean enabled = false;
+    	private boolean createOnlyIfSyncableScans = true;
     	private String issueTemplateName = "Prioritized High Risk Issue Template";
     	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
 	}

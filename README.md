@@ -97,6 +97,8 @@ Following is an example configuration file:
 logging:
   level:
     com.fortify.sync.fod_ssc: DEBUG
+#    org.apache.http: TRACE
+#    org.glassfish.jersey: TRACE
 
 sync:
   # Define FoD and SSC connections
@@ -130,8 +132,9 @@ sync:
     
     # Configuration for syncScans task
     syncScans:
-      # Configure the schedule for running the syncScans task
-      # This example runs once per minute; you probably want to reduce this
+      # Configure the schedule for running the syncScans task.
+      # This example runs every minute at the 30-second mark; 
+      # you probably want to reduce this for production runs.
       cronSchedule: '30 * * * * *'
       
       # Configure how long to keep scans downloaded from FoD, mainly
@@ -139,12 +142,22 @@ sync:
       # be deleted immediately after uploading to SSC. If set to a 
       # non-zero number, any matching scans will be deleted whenever
       # the syncScans task runs.
-      # deleteScansOlderThanMinutes: 30
+      deleteScansOlderThanMinutes: 5
+      
+      # Ignore any scans on FoD if they are older than this number of days.
+      # FoD has a retention policy of 2 years, after which scans are no longer
+      # downloadable. As such, the default value for this property is 730 days. 
+      # Setting this property to more than 730 days may cause errors when 
+      # trying to download older scans. Optionally, this property can be set
+      # to a smaller number of days, like 365 or 30, if you want to ignore
+      # older scans.
+      #ignoreScansOlderThanDays: 730
       
     # Configuration for the linkReleases task
     linkReleases:
-      # Configure the schedule for running the linkReleases task
-      # This example runs once per minute; you probably want to reduce this
+      # Configure the schedule for running the linkReleases task.
+      # This example runs every minute at the 0-second mark; 
+      # you probably want to reduce this for production runs.
       cronSchedule: '0 * * * * *'
       
       # FoD-related configuration for the linkReleases task
@@ -169,7 +182,7 @@ sync:
             # to 'True'.
             filterExpressions:
             - attributesMap['SyncWithSSC'] == 'True'
-            #  - applicationName == 'test'
+            #- applicationName == 'test'
           
           release:
             # Have FoD filter the list of releases by passing the given value
@@ -180,8 +193,7 @@ sync:
             # based on FoD release properties. This example only takes releases
             # into account that have either static or dynamic scan results.
             filterExpressions:
-            - staticScanDate!=null || dynamicScanDate!=null
-            #  - releaseName matches '5.0'
+            #- releaseName matches '5.0'
             
             # For each matching application, link only the first release that matches
             # the filters above, based on the configured order by property and direction.
@@ -200,10 +212,18 @@ sync:
           # For newly created SSC application versions, configure which FoD scan types should
           # be synchronized by default.
           enabledFoDScanTypes: 
-          
           - Static
           - Dynamic
           #- Mobile # FoD REST API does not yet allow for downloading Mobile scan results
+          
+          # Ceate an SSC application version only if there are scans to be synchronized. If set
+          # to true (default), the utility will only create application versions for FoD releases
+          # that have one of the scan types defined in the enabledFoDScanTypes property above,
+          # and at least one of those scans is not older than the ignoreScansOlderThanDays 
+          # property defined in the syncScans configuration. If set to false, SSC application 
+          # versions will be created for any release that matches the FoD filters configured above,
+          # independent of whether there are actually any scans to be synchronized.
+          #createOnlyIfSyncableScans: true
           
           # Configure the issue template name to be used for newly created SSC application versions.
           issueTemplateName: Prioritized High Risk Issue Template

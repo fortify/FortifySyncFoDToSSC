@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 import org.apache.commons.lang.StringUtils;
@@ -68,7 +69,7 @@ import com.fortify.util.rest.json.JSONMap;
  *
  */
 @Component
-public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
+public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> implements IHasSyncableScanChecker {
 	private static final String PFX_SCAN_FILE_NAME = "FoDScan-";
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -175,10 +176,33 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> {
 		Date fodScanDate = getFoDScanDate(fodRelease, scanType);
 		Date oldScanDate = syncStatus.getScanDate(scanType);
 		LOG.debug("[{} - {}] Scan type {}: current scan date {}, previous scan date {}", fodRelease.get("applicationName", String.class), fodRelease.get("releaseName", String.class), scanType, fodScanDate, oldScanDate);
-		if ( fodScanDate!=null && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
+		if ( isSyncableScanDate(fodScanDate) && (oldScanDate==null || fodScanDate.after(oldScanDate)) ) {
 			syncScanType(sscApplicationVersionId, fodRelease, scanType);
 			syncStatus.setScanDate(scanType, fodScanDate);
 		}
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see com.fortify.sync.fod_ssc.task.IHasSyncableScan#hasSyncableScan(com.fortify.util.rest.json.JSONMap, java.lang.String)
+	 */
+	@Override
+	public final boolean hasSyncableScan(JSONMap fodRelease, String scanType) {
+		Date fodScanDate = getFoDScanDate(fodRelease, scanType);
+		return isSyncableScanDate(fodScanDate);
+	}
+
+	/**
+	 * Check whether the given FoD scan date is syncable, i.e. not null and not older
+	 * than configured number of days.
+	 * @param fodScanDate
+	 * @return
+	 */
+	private final boolean isSyncableScanDate(Date fodScanDate) {
+		if ( fodScanDate == null ) { return false; }
+		ZonedDateTime now = ZonedDateTime.now();
+		ZonedDateTime oldestAllowedScanDate = now.plusDays(-config.getIgnoreScansOlderThanDays());
+		return fodScanDate.toInstant().isAfter(oldestAllowedScanDate.toInstant());
 	}
 
 	/**

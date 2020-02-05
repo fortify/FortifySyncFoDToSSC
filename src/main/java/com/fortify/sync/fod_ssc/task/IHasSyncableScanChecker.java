@@ -22,24 +22,12 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
  * IN THE SOFTWARE.
  ******************************************************************************/
-package com.fortify.sync.fod_ssc.config;
+package com.fortify.sync.fod_ssc.task;
 
-import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
-import com.fortify.sync.fod_ssc.task.SyncScansTask;
+import com.fortify.util.rest.json.JSONMap;
 
-import lombok.Data;
+public interface IHasSyncableScanChecker {
 
-/**
- * This {@link Data} class holds the configuration for {@link SyncScansTask}.
- * This configuration is automatically loaded from the configuration file by
- * {@link FortifySyncFoDToSSCApplication#configSyncScansTask()}.
- *  
- * @author Ruud Senden
- *
- */
-@Data
-public class SyncScansTaskConfig implements IScheduleConfig {
-	private String cronSchedule = "-";
-	private long deleteScansOlderThanMinutes = 0;
-	private long ignoreScansOlderThanDays = 730; // Default FoD retention policy is 2 years
+	boolean hasSyncableScan(JSONMap fodRelease, String scanType);
+
 }
