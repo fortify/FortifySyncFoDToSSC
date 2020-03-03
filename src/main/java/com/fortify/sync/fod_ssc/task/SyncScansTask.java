@@ -146,18 +146,27 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	private final void processSyncedApplicationVersion(String sscApplicationVersionId, SyncConfig syncConfig, SyncStatus syncStatus) {
 		String[] scanTypes = syncConfig.getIncludedScanTypes();
 		if ( scanTypes!=null && scanTypes.length > 0 ) {
-			JSONMap fodRelease = getFodRelease(syncConfig.getFodReleaseId());
-			for ( String scanType : scanTypes ) {
-				try {
-					syncScanTypeIfNecessary(sscApplicationVersionId, fodRelease, syncStatus, scanType);
-				} catch (RuntimeException e) {
-					// We catch the exception here in order to allow other scan types to be processed,
-					// and scan status to be updated for successfully processed scan types.
-					LOG.error("Error processing scan type "+scanType,e);
-				} 
+			String fodReleaseId = syncConfig.getFodReleaseId();
+			JSONMap fodRelease = getFodRelease(fodReleaseId);
+			if ( fodRelease==null ) {
+				LOG.warn("FoD release id {} does not exist; skipping sync for application version id {}", fodReleaseId, sscApplicationVersionId);
+			} else {
+				processSyncedApplicationVersion(sscApplicationVersionId, syncStatus, scanTypes, fodRelease);
 			}
 		}
 		syncStatus.updateApplicationVersion(sscConn, sscApplicationVersionId);
+	}
+
+	private void processSyncedApplicationVersion(String sscApplicationVersionId, SyncStatus syncStatus, String[] scanTypes, JSONMap fodRelease) {
+		for ( String scanType : scanTypes ) {
+			try {
+				syncScanTypeIfNecessary(sscApplicationVersionId, fodRelease, syncStatus, scanType);
+			} catch (RuntimeException e) {
+				// We catch the exception here in order to allow other scan types to be processed,
+				// and scan status to be updated for successfully processed scan types.
+				LOG.error("Error processing scan type "+scanType,e);
+			} 
+		}
 	}
 
 	/**
