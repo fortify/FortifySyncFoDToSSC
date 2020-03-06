@@ -26,6 +26,8 @@ package com.fortify.sync.fod_ssc.task;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
@@ -233,11 +235,16 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	}
 
 	private String getScanTempFileName(JSONMap fodRelease, String scanType) {
-		return String.format("%s%s-%s-%s-%s.fpr", 
-				PFX_SCAN_FILE_NAME,
-				fodRelease.get("applicationName", String.class), 
-				fodRelease.get("releaseName", String.class), 
-				scanType, FMT_TIMESTAMP.format(new Date()));
+		try {
+			String fileName = String.format("%s%s-%s-%s-%s.fpr", 
+					PFX_SCAN_FILE_NAME,
+					fodRelease.get("applicationName", String.class), 
+					fodRelease.get("releaseName", String.class), 
+					scanType, FMT_TIMESTAMP.format(new Date()));
+			return URLEncoder.encode(fileName, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException("Error generating temporary file name", e);
+		}
 	}
 
 	/**
