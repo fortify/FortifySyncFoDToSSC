@@ -75,7 +75,7 @@ public class FortifySyncFoDToSSCApplication {
 	@Bean
 	@ConfigurationProperties("sync.connections.fod") 
 	public FoDAuthenticatingRestConnectionBuilder fodConnectionBuilder() {
-		return FoDAuthenticatingRestConnection.builder().useCache(false).multiThreaded(true);
+		return FoDAuthenticatingRestConnection.builder().useCache(false).multiThreaded(true).scopes("view-apps", "view-issues");
 	}
 	
 	/**
