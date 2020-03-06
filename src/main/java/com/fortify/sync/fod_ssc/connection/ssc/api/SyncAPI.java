@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import com.fortify.client.ssc.api.AbstractSSCAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.query.builder.EmbedType;
@@ -51,6 +53,10 @@ public final class SyncAPI extends AbstractSSCAPI {
 	 */
 	public SyncAPI(SSCAuthenticatingRestConnection conn) {
 		super(conn);
+	}
+	
+	public static final String[] getRequiredSSCApplicationAttributeNames() {
+		return (String[]) ArrayUtils.addAll(SyncConfig.SSC_REQUIRED_ATTRS, SyncStatus.SSC_REQUIRED_ATTRS);
 	}
 	
 	/**

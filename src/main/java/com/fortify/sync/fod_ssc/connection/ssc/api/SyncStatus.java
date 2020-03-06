@@ -66,6 +66,7 @@ import lombok.Setter;
 @Data
 public final class SyncStatus {
 	private static final String SSC_ATTR_FOD_SYNC_STATUS = "FoD Sync - Status";
+	static final String[] SSC_REQUIRED_ATTRS = {SSC_ATTR_FOD_SYNC_STATUS};
 	private static final Logger LOG = LoggerFactory.getLogger(SyncAPI.class);
 	private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	
