@@ -105,6 +105,12 @@ sync:
   connections:
     fod:
       baseUrl: https://emea.fortify.com # Use appropriate ams/apj/emea domain
+      
+      # Configure FoD tenant and credentials
+      # Instead of actual password, a Personal Access Token (PAT) may be specified
+      # in the password field. When using a PAT, it should have the following scopes:
+      # - view-apps
+      # - view-issues
       tenant: ${FOD_TENANT} # Get from environment variable
       userName: ${FOD_USER} # Get from environment variable
       password: ${FOD_PWD}  # Get from environment variable
@@ -129,6 +135,8 @@ sync:
       #  password: {password for proxy user}
     ssc:
       baseUrl: ${SSC_URL} # Get from environment variable
+      
+      # Configure SSC user name and password
       userName: ${SSC_USER} # Get from environment variable
       password: ${SSC_PWD} # Get from environment variable
   
@@ -184,7 +192,9 @@ sync:
             # Expressions can reference FoD application properties and application
             # attributes. This example only takes applications into account for 
             # which the custom 'SyncWithSSC' application attribute has been set 
-            # to 'True'.
+            # to 'True'. If you want to have the utility take all applications into
+            # consideration for automatic linking, you can comment out the example
+            # attributesMap expression.
             filterExpressions:
             - attributesMap['SyncWithSSC'] == 'True'
             #- applicationName == 'test'
