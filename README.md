@@ -109,6 +109,11 @@ sync:
       userName: ${FOD_USER} # Get from environment variable
       password: ${FOD_PWD}  # Get from environment variable
       
+      # To use client credentials, comment out tenant/userName/password fields 
+      # and uncomment the following:
+      # clientId: ${FOD_CLIENT_ID} 
+      # clientSecret: ${FOD_CLIENT_SECRET}
+      
       # Configure the number of retries if FoD rate limit is exceeded
       # If userName configured above is only used for this integration,
       # this can be left at the default (1). If userName is also used
