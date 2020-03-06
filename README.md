@@ -104,7 +104,7 @@ sync:
   # Define FoD and SSC connections
   connections:
     fod:
-      baseUrl: https://emea.fortify.com # Use appropriate ams/apj/emea domain
+      baseUrl: ${FOD_URL} # Get from environment variable; https://{region}.fortify.com
       
       # Configure FoD tenant and credentials
       # Instead of actual password, a Personal Access Token (PAT) may be specified
@@ -201,8 +201,10 @@ sync:
           
           release:
             # Have FoD filter the list of releases by passing the given value
-            # as FoD 'filter' request parameter
-            # fodFilterParam: releaseName:5.0
+            # as FoD 'filter' request parameter. This default configuration
+            # instructs FoD to return only releases with these SDLC status
+            # types (effectively excluding any retired releases)
+            fodFilterParam: sdlcStatusType:Production|QA|Development
             
             # Similar to application filter expressions, allows for filtering
             # based on FoD release properties. This example only takes releases
