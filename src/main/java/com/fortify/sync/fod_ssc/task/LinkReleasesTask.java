@@ -25,6 +25,7 @@
 package com.fortify.sync.fod_ssc.task;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.junit.platform.commons.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -227,16 +228,35 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * @param release
 		 */
 		private final void processUnlinkedFoDRelease(JSONMap release) {
-			String fodApplicationName = release.getPath("application.applicationName", String.class);
-			String fodReleaseName = release.getPath("releaseName", String.class);
-			LOG.debug("Processing unlinked FoD release {}:{}", release.getPath("application.applicationName",String.class), release.getPath("releaseName",String.class));
+			String fodApplicationName = getFoDApplicationName(release);
+			String fodReleaseWithMicroserviceName = getFoDReleaseWithMicroserviceName(release);
 			
-			JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseName, false);
+			LOG.debug("Processing unlinked FoD release {}:{}", fodApplicationName, fodReleaseWithMicroserviceName);
+			
+			JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseWithMicroserviceName, false);
 			if ( sscApplicationVersion==null ) {
 				processUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(release);
 			} else {
 				processUnlinkedFoDReleaseWithMatchingSSCApplicationVersion(release, sscApplicationVersion);
 			}
+		}
+
+		private final String getFoDReleaseWithMicroserviceName(JSONMap release) {
+			String fodReleaseName = getFoDReleaseName(release);
+			String fodMicroserviceName = getFoDMicroserviceName(release);
+			return StringUtils.isBlank(fodMicroserviceName) ? fodReleaseName : String.format("%s-%s", fodMicroserviceName, fodReleaseName);
+		}
+
+		private final String getFoDMicroserviceName(JSONMap release) {
+			return release.getPath("microserviceName", String.class);
+		}
+
+		private final String getFoDReleaseName(JSONMap release) {
+			return release.getPath("releaseName", String.class);
+		}
+
+		private final String getFoDApplicationName(JSONMap release) {
+			return release.getPath("application.applicationName", String.class);
 		}
 
 		/**
@@ -246,16 +266,16 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * @param release
 		 */
 		private final void processUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(JSONMap release) {
-			String fodApplicationName = release.getPath("application.applicationName", String.class);
-			String fodReleaseName = release.getPath("releaseName", String.class);
+			String fodApplicationName = getFoDApplicationName(release);
+			String fodReleaseWithMicroserviceName = getFoDReleaseWithMicroserviceName(release);
 			
 			if ( !config.getSsc().getAutoCreateVersions().isEnabled() ) {
-				LOG.debug("SSC application version creation disabled; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
+				LOG.debug("SSC application version creation disabled; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
 			} else if ( config.getSsc().getAutoCreateVersions().isCreateOnlyIfSyncableScans() && !hasSyncableScans(release) ) {
-				LOG.debug("FoD release has no syncable scans; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
+				LOG.debug("FoD release has no syncable scans; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
 			} else {
-				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseName);
-				createLinkedSSCApplicationVersion(fodApplicationName, fodReleaseName, release.get("releaseId", String.class));
+				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
+				createLinkedSSCApplicationVersion(fodApplicationName, fodReleaseWithMicroserviceName, release.get("releaseId", String.class));
 			}
 		}
 
@@ -297,7 +317,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			String fodReleaseId = release.get("releaseId", String.class);
 			String sscApplicationVersionId = sscApplicationVersion.get("id", String.class);
 			if ( linkedVersionsAndReleasesIds.getLinkedSSCApplicationVersionIds().contains(sscApplicationVersionId)) {
-				LOG.warn("SSC application version id %s matches FoD release id %s, but release is already linked to another SSC version",
+				LOG.warn("SSC application version id {} matches FoD release id {}, but release is already linked to another SSC version",
 					sscApplicationVersionId, fodReleaseId);
 			} else {
 				LOG.debug("Linking existing SSC application version id {} to FoD release id {}", sscApplicationVersionId, fodReleaseId);
