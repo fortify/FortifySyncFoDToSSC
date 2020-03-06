@@ -50,7 +50,7 @@ import lombok.Data;
  */
 @Data
 public final class SyncConfig {
-	private static final String SSC_ATTR_INCLUDE_FOD_SCAN_TYPES = "XFoD Sync - Include Scan Types";
+	private static final String SSC_ATTR_INCLUDE_FOD_SCAN_TYPES = "FoD Sync - Include Scan Types";
 	private static final String SSC_ATTR_FOD_RELEASE_ID = "FoD Sync - Release Id";
 	static final String[] SSC_REQUIRED_ATTRS = {SSC_ATTR_FOD_RELEASE_ID, SSC_ATTR_INCLUDE_FOD_SCAN_TYPES};
 	private final String fodReleaseId;
