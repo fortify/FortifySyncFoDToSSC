@@ -213,7 +213,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			// We need to filter here instead of using a filtering pre-processor
 			// on the FoDReleasesQueryBuilder; otherwise the 'onlyFirst' release 
 			// filter would return the first release that hasn't been linked yet
-			// on each task run.
+			// on each task run, thereby linking an additional release on each task run
 			if ( !linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)) ) {
 				processUnlinkedFoDRelease(release);
 			}
