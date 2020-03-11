@@ -91,7 +91,7 @@ The utility will use the following methods to locate the fortify.home directory,
 3. Default value `~/.fortify`
 
 Sample configuration files can be found in the GitHub repository at
-https://github.com/fortify-ps/FortifySyncFoDToSSC/samples. 
+https://github.com/fortify-ps/FortifySyncFoDToSSC/tree/1.0-SNAPSHOT/samples. 
 
 The `cronSchedule` property is in extended cron format, using 6 fields to specify
 second, minute, hour, day of month, month, and day of week. To disable either 
