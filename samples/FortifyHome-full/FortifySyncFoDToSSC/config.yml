@@ -1,0 +1,174 @@
+# This sample configuration file lists all available configuration settings.
+
+# Configure log levels for both utility and 3rd-party packages
+# Valid log levels: TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
+logging.level:
+  # Set the log level for standard utility logging output.
+  # Default value: INFO
+  com.fortify.sync.fod_ssc: DEBUG 
+
+  # Log level for other packages can be adjusted in a similar way. As an example, 
+  # setting the following log levels to TRACE would log all request and response 
+  # data. Note that this can reveal sensitive data like FoD and SSC credentials and 
+  # tokens, and may severely affect performance.
+  # Default values: INFO
+  org.apache.http: INFO 
+  org.glassfish.jersey: INFO
+
+# Uncomment the following line to also log to a file.
+# ${sync.home} corresponds to ${fortify.home}/FortifySyncFoDToSSC
+# Default value: not configured
+logging.file: ${sync.home}/logs/FortifySyncFoDToSSC.log
+
+
+# Configure the connection to FoD
+sync.connections.fod:
+  # Configure FoD connection details and credentials from required environment variables
+  # Default values: not configured
+  baseUrl: ${FOD_URL} # https://{region}.fortify.com
+  tenant: ${FOD_TENANT}
+  userName: ${FOD_USER} # Either dedicated user, or increase rateLimitMaxRetries below
+  password: ${FOD_PWD}  # May use PAT that has view-apps and view-issues scopes
+  
+  # To use client credentials, comment out tenant/userName/password fields and uncomment 
+  # the following to configure client id and secret from required environment variables
+  # Default values: not configured
+  #clientId: ${FOD_CLIENT_ID} 
+  #clientSecret: ${FOD_CLIENT_SECRET}
+  
+  # Configure the number of retries if FoD rate limit is exceeded
+  # If userName configured above is only used for this integration,
+  # this can be left at the default (1). If userName is also used
+  # by other integrations, you may want to increase this to retry
+  # multiple times in case the other integration is assigned a free 
+  # rate limit slot.
+  # Default value: 1
+  rateLimitMaxRetries: 1
+  
+  # Configure the proxy used to access FoD from optional environment variables
+  # Default values: not configured
+  proxy:
+    url: ${FOD_PROXY_URL:}
+    userName: ${FOD_PROXY_USER:}
+    password: ${FOD_PROXY_PWD:}
+
+
+# Configure the connection to SSC  
+sync.connections.ssc:
+  # Configure SSC connection details and credentials from required environment variables
+  # Default values: not configured
+  baseUrl: ${SSC_URL}
+  userName: ${SSC_USER}
+  password: ${SSC_PWD}
+  
+  # To use an SSC authentication token, comment out userName/password fields
+  # and uncomment the following to configure authentication token from required
+  # environment variable. 
+  # Default values: not configured
+  #authToken: ${SSC_AUTH_TOKEN} 
+      
+  # Configure the proxy used to access SSC from optional environment variables
+  # Default values: not configured
+  proxy:
+    url: ${SSC_PROXY_URL:}
+    userName: ${SSC_PROXY_USER:}
+    password: ${SSC_PROXY_PWD:}
+
+
+# Configure the SyncScans task
+sync.tasks.syncScans:
+  # Sync scans every minute at the 0-second mark
+  # Default value: '-' (task will not run automatically)
+  cronSchedule: '0 * * * * *'
+
+  # By default, scans downloaded from FoD will be deleted immediately after they
+  # have been uploaded to SSC. Setting this property to a non-zero value will 
+  # persist downloaded scans for the configured number of minutes, which can be
+  # useful for debugging purposes. Any scans for which the configured number of 
+  # minutes has passed will be deleted whenever the syncScans task runs again.
+  # Default value: 0
+  deleteScansOlderThanMinutes: 5
+      
+  # Ignore any scans on FoD if they are older than this number of days.
+  # FoD has a retention policy of 2 years, after which scans are no longer
+  # downloadable. As such, the default value for this property is 730 days. 
+  # Setting this property to more than 730 days may cause errors when 
+  # trying to download older scans. Optionally, this property can be set
+  # to a smaller number of days, like 365 or 30, if you want to ignore
+  # older scans.
+  # Default value: 730
+  ignoreScansOlderThanDays: 30
+
+
+# Configure the LinkReleases task
+sync.tasks.linkReleases:
+  # Link releases every minute at the 30-second mark
+  # Default value: '-' (task will not run automatically)
+  cronSchedule: '30 * * * * *'
+  
+  # FoD-related configuration for the linkReleases task
+  fod:
+    # Configure which FoD applications and releases should be taken
+    # into account for linking FoD releases to SSC application versions.
+    filters:
+      application:  
+        # Have FoD filter the list of applications by passing the given value
+        # as FoD 'filter' request parameter
+        # Default value: not configured
+        fodFilterParam: applicationName:WebGoat 
+        
+        # Client-side filter based on SpEL predicate expressions; see 
+        # https://docs.spring.io/spring/docs/5.2.1.RELEASE/spring-framework-reference/core.html#expressions-language-ref
+        # Expressions can reference the following propertiesFoD application properties and application
+        # attributes. This example only takes applications into account for 
+        # which the custom 'SyncWithSSC' application attribute has been set 
+        # to 'True'. If you want to have the utility take all applications into
+        # consideration for automatic linking, you can comment out the example
+        # attributesMap expression.
+        # Default value: not configured
+        filterExpressions:
+        - attributesMap['SyncWithSSC'] == 'True'
+        #- applicationName == 'WebGoat' # Filter on exact application name, rather than fodFilterParam 'contains' filter above
+      
+      release:
+        # Have FoD filter the list of releases by passing the given value
+        # as FoD 'filter' request parameter. This default configuration
+        # instructs FoD to return only releases with these SDLC status
+        # types (effectively excluding any retired releases)
+        # Default value: sdlcStatusType:Production|QA|Development
+        fodFilterParam: sdlcStatusType:Production|QA|Development
+        
+        # Similar to application filter expressions, allows for filtering
+        # based on FoD release properties. 
+        # Default value: not configured
+        filterExpressions:
+        #- releaseName matches '5.0'
+  
+  # SSC-related configuration for the linkReleases task
+  ssc:
+    autoCreateVersions: 
+      # If enabled, automatically create new SSC application versions for FoD releases 
+      # that match the FoD filter criteria defined above. If disabled, FoD releases will
+      # only be linked if the corresponding SSC application version already exists.
+      # Default value: true
+      enabled: true
+      
+      # For newly created SSC application versions, configure which FoD scan types should
+      # be synchronized by default.
+      # Default values: Static, Dynamic
+      enabledFoDScanTypes: 
+      - Static
+      - Dynamic
+      
+      # Create an SSC application version only if there are scans to be synchronized. If set
+      # to true (default), the utility will only create application versions for FoD releases
+      # that have one of the scan types defined in the enabledFoDScanTypes property above,
+      # and at least one of those scans is not older than the ignoreScansOlderThanDays 
+      # property defined in the syncScans configuration. If set to false, SSC application 
+      # versions will be created for any release that matches the FoD filters configured above,
+      # independent of whether there are actually any scans to be synchronized.
+      # Default value: true
+      createOnlyIfSyncableScans: false
+      
+      # Configure the issue template name to be used for newly created SSC application versions.
+      issueTemplateName: Prioritized High Risk Issue Template

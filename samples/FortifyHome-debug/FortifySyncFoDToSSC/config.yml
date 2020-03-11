@@ -1,0 +1,44 @@
+# Configure log levels for both utility and 3rd-party packages
+logging.level:
+  # Set the log level for standard utility logging output to DEBUG
+  com.fortify.sync.fod_ssc: DEBUG 
+
+  # Uncomment the following two lines to also log request and response data.
+  # Note that this can reveal sensitive data like FoD and SSC credentials and tokens,
+  # and may severely affect performance.
+  #org.apache.http: TRACE 
+  #org.glassfish.jersey: TRACE
+
+# Configure the connection to FoD
+sync.connections.fod:
+  # Configure FoD connection details and credentials from required environment variables
+  baseUrl: ${FOD_URL} # https://{region}.fortify.com
+  tenant: ${FOD_TENANT}
+  userName: ${FOD_USER} # Dedicated user, not used by any other FoD API clients
+  password: ${FOD_PWD}  # May use PAT that has view-apps and view-issues scopes
+  
+  # Configure the proxy used to access FoD from optional environment variables
+  proxy:
+    url: ${FOD_PROXY_URL:}
+    userName: ${FOD_PROXY_USER:}
+    password: ${FOD_PROXY_PWD:}
+
+# Configure the connection to SSC
+sync.connections.ssc:
+  # Configure SSC connection details and credentials from required environment variables
+  baseUrl: ${SSC_URL}
+  userName: ${SSC_USER}
+  password: ${SSC_PWD}
+
+# Configure the SyncScans task
+sync.tasks.syncScans:
+  # Sync scans every minute at the 0-second mark
+  cronSchedule: '0 * * * * *'
+  
+  # Keep downloaded FoD scans for 5 minutes; may be useful to verify download contents
+  deleteScansOlderThanMinutes: 5
+
+# Configure the LinkReleases task
+sync.tasks.linkReleases:
+  # Link releases every minute at the 30-second mark
+  cronSchedule: '30 * * * * *'

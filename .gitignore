@@ -31,3 +31,7 @@ out/
 ### VS Code ###
 .vscode/
 bin/
+
+### Sample scans & logs ###
+samples/**/scans/**
+samples/**/logs/**

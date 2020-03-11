@@ -1,0 +1,30 @@
+# Configure the connection to FoD
+sync.connections.fod:
+  # Configure FoD connection details and credentials from required environment variables
+  baseUrl: ${FOD_URL} # https://{region}.fortify.com
+  tenant: ${FOD_TENANT}
+  userName: ${FOD_USER} # Dedicated user, not used by any other FoD API clients
+  password: ${FOD_PWD}  # May use PAT that has view-apps and view-issues scopes
+  
+  # Configure the proxy used to access FoD from optional environment variables
+  proxy:
+    url: ${FOD_PROXY_URL:}
+    userName: ${FOD_PROXY_USER:}
+    password: ${FOD_PROXY_PWD:}
+
+# Configure the connection to SSC  
+sync.connections.ssc:
+  # Configure SSC connection details and credentials from required environment variables
+  baseUrl: ${SSC_URL}
+  userName: ${SSC_USER}
+  password: ${SSC_PWD}
+
+# Configure the SyncScans task
+sync.tasks.syncScans:
+  # Sync scans every hour at the 0-minute mark
+  cronSchedule: '0 0 * * * *'
+
+# Configure the LinkReleases task
+sync.tasks.linkReleases:
+  # Link releases every hour at the 30-minute mark
+  cronSchedule: '0 30 * * * *'
