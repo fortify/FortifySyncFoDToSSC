@@ -211,12 +211,6 @@ sync:
             # into account that have either static or dynamic scan results.
             filterExpressions:
             #- releaseName matches '5.0'
-            
-            # For each matching application, link only the first release that matches
-            # the filters above, based on the configured order by property and direction.
-            onlyFirst:
-              orderBy: releaseCreatedDate
-              direction: DESC
       
       # SSC-related configuration for the linkReleases task
       ssc:

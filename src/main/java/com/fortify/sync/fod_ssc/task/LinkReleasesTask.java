@@ -47,7 +47,6 @@ import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.AbstractFoDQueryCo
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigApplicationFilters;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigAutoCreate;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigReleaseFilters;
-import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.OrderBy;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI.LinkedVersionsAndReleasesIds;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncConfig;
@@ -137,10 +136,14 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 				.onDemandAll()
 				.paramFilterAnd("applicationId", application.get("applicationId", String.class))
 				.preProcessor(new JSONMapEnrichWithValue("application", application));
+			addNotYetLinkedFilter(qb);
 			addParamFilter(qb, releaseFilters);
 			addFilterExpressions(qb, releaseFilters);
-			addOnlyFirstFilter(qb, releaseFilters);
 			return qb;
+		}
+
+		private final void addNotYetLinkedFilter(FoDReleasesQueryBuilder qb) {
+			qb.preProcessor(release->!linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)));
 		}
 
 		/**
@@ -166,20 +169,6 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		}
 		
 		/**
-		 * Add query parameters and filters for processing only the first FoD release
-		 * that matches the other filters.
-		 * @param qb
-		 * @param releaseFilters
-		 */
-		private final void addOnlyFirstFilter(FoDReleasesQueryBuilder qb, ConfigReleaseFilters releaseFilters) {
-			OrderBy onlyFirst = releaseFilters.getOnlyFirst();
-			if ( onlyFirst!=null ) {
-				qb.maxResults(1)
-					.paramOrderBy(onlyFirst.getOrderBy(), onlyFirst.getDirection());
-			}
-		}
-		
-		/**
 		 * This method calls {@link #getApplicationsQueryBuilder()} to build an
 		 * {@link FoDApplicationsQueryBuilder} instance, then invokes the 
 		 * {@link #processFoDApplication(JSONMap)} method for each FoD application
@@ -198,25 +187,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 */
 		private final void processFoDApplication(JSONMap application) {
 			LOG.debug("Loading releases for application "+application.get("applicationName", String.class));
-			getReleasesQueryBuilder(application).build().processAll(this::processFoDRelease);
-		}
-		
-		/**
-		 * For every FoD release matching the configured application and release filters, this
-		 * method checks whether the given release has already been linked to an SSC application 
-		 * version. If not, the {@link #processUnlinkedFoDRelease(JSONMap)} method will be called 
-		 * to potentially link the given release to a new or existing SSC application version.
-		 *  
-		 * @param release
-		 */
-		private final void processFoDRelease(JSONMap release) {
-			// We need to filter here instead of using a filtering pre-processor
-			// on the FoDReleasesQueryBuilder; otherwise the 'onlyFirst' release 
-			// filter would return the first release that hasn't been linked yet
-			// on each task run, thereby linking an additional release on each task run
-			if ( !linkedVersionsAndReleasesIds.getLinkedFoDReleaseIds().contains(release.get("releaseId", String.class)) ) {
-				processUnlinkedFoDRelease(release);
-			}
+			getReleasesQueryBuilder(application).build().processAll(this::processUnlinkedFoDRelease);
 		}
 	
 		/**
