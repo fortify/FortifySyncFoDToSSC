@@ -65,10 +65,14 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
     
     @Data @EqualsAndHashCode(callSuper=true) public static class ConfigApplicationFilters extends AbstractFoDQueryConfig {} 
     
-    @Data @EqualsAndHashCode(callSuper=true) public static class ConfigReleaseFilters extends AbstractFoDQueryConfig {} 
+    @Data @EqualsAndHashCode(callSuper=true) public static class ConfigReleaseFilters extends AbstractFoDQueryConfig {
+    	public ConfigReleaseFilters() {
+    		setFodFilterParam("sdlcStatusType:Production|QA|Development");
+    	}
+    } 
 
     @Data public static class ConfigAutoCreate {
-    	private boolean enabled = false;
+    	private boolean enabled = true;
     	private boolean createOnlyIfSyncableScans = true;
     	private String issueTemplateName = "Prioritized High Risk Issue Template";
     	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
