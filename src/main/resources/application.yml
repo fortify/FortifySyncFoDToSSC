@@ -6,8 +6,11 @@
 logging:
   level:
     com.fortify.sync.fod_ssc: INFO
+    org.quartz: WARN
 
 spring:
+  profiles:
+    active: default
   quartz: ## QuartzProperties
     job-store-type: memory
     auto-startup: true
