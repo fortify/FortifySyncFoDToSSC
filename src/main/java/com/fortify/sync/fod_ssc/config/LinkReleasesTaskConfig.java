@@ -51,6 +51,7 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
     
     @Data public static class ConfigJobLinkReleasesSSC {
     	private ConfigAutoCreate autoCreateVersions = new ConfigAutoCreate();
+    	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
     }
     
     @Data public static class ConfigFoDQuery {
@@ -75,6 +76,5 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
     	private boolean enabled = true;
     	private boolean createOnlyIfSyncableScans = true;
     	private String issueTemplateName = "Prioritized High Risk Issue Template";
-    	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
 	}
 }

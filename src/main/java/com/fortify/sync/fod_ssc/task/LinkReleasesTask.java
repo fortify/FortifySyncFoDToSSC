@@ -252,7 +252,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 
 		private boolean hasSyncableScans(JSONMap release) {
 			boolean result = false;
-			for ( String fodScanType : config.getSsc().getAutoCreateVersions().getEnabledFoDScanTypes() ) {
+			for ( String fodScanType : config.getSsc().getEnabledFoDScanTypes() ) {
 				result |= hasSyncableScanChecker.hasSyncableScan(release, fodScanType);
 			}
 			return result;
@@ -306,7 +306,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * @return
 		 */
 		private final MultiValueMap<String, Object> getSyncConfigAttributesMap(String fodReleaseId) {
-			return new SyncConfig(fodReleaseId, config.getSsc().getAutoCreateVersions().getEnabledFoDScanTypes()).asAttributesMap();
+			return new SyncConfig(fodReleaseId, config.getSsc().getEnabledFoDScanTypes()).asAttributesMap();
 		}
 	}
 	
