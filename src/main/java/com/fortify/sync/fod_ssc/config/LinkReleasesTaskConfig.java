@@ -24,6 +24,9 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
 import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
 import com.fortify.sync.fod_ssc.task.LinkReleasesTask;
 import com.fortify.util.spring.expression.SimpleExpression;
@@ -52,6 +55,7 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
     @Data public static class ConfigJobLinkReleasesSSC {
     	private ConfigAutoCreate autoCreateVersions = new ConfigAutoCreate();
     	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
+    	private final MultiValueMap<String, String> attributeExpressions = new LinkedMultiValueMap<>();
     }
     
     @Data public static class ConfigFoDQuery {

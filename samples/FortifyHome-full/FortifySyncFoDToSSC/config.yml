@@ -104,7 +104,7 @@ sync.tasks.syncScans:
 sync.tasks.linkReleases:
   # Link releases every minute at the 30-second mark
   # Default value: '-' (task will not run automatically)
-  cronSchedule: '30 * * * * *'
+  cronSchedule: '* * * * * *'
   
   # FoD-related configuration for the linkReleases task
   fod:
@@ -146,14 +146,28 @@ sync.tasks.linkReleases:
   
   # SSC-related configuration for the linkReleases task
   ssc:
-    # For newly linked SSC application versions, configure which FoD scan types should
-    # be synchronized by default. This applies to both newly created application 
+    # For automatically linked SSC application versions, configure which FoD scan types 
+    # should be synchronized by default. This applies to both newly created application 
     # versions (see autoCreateVersions below) and previously existing application 
     # versions that are newly linked.
     # Default values: Static, Dynamic
     enabledFoDScanTypes: 
     - Static
     # - Dynamic # Example to exclude dynamic scans from syncing by default
+    
+    # For automatically linked SSC application versions, configure the application 
+    # version attributes to be set. This applies to both newly created application 
+    # versions (see autoCreateVersions below) and previously existing application 
+    # versions that are newly linked. Attribute names containing spaces must be 
+    # surrounded by '[ and ]'. Expressions may use ${fodReleaseProperty} to set 
+    # SSC application attributes based on FoD release properties. Note that setting
+    # these SSC attributes is done on a best effort basis; any failures will be 
+    # logged as a warning.
+    # Default value: not configured
+    attributeExpressions:
+      # Example to set SSC 'Application Type' attribute based on FoD 'Project type' attribute
+      '[Application Type]': 
+        - ${application?.attributesMap["Project type"]}
   
     autoCreateVersions: 
       # If enabled, automatically create new SSC application versions for FoD releases 

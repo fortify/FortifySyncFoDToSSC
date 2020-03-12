@@ -24,12 +24,16 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
+import java.util.List;
+import java.util.Map.Entry;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.fortify.client.fod.api.FoDApplicationAPI;
@@ -54,6 +58,7 @@ import com.fortify.util.rest.json.JSONMap;
 import com.fortify.util.rest.json.preprocessor.enrich.JSONMapEnrichWithValue;
 import com.fortify.util.rest.json.preprocessor.filter.AbstractJSONMapFilter.MatchMode;
 import com.fortify.util.rest.json.preprocessor.filter.JSONMapFilterSpEL;
+import com.fortify.util.spring.SpringExpressionUtil;
 import com.fortify.util.spring.expression.SimpleExpression;
 
 /**
@@ -217,6 +222,10 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			String fodMicroserviceName = getFoDMicroserviceName(release);
 			return StringUtils.isBlank(fodMicroserviceName) ? fodReleaseName : String.format("%s-%s", fodMicroserviceName, fodReleaseName);
 		}
+		
+		private final String getFoDReleaseId(JSONMap release) {
+			return release.getPath("releaseId", String.class);
+		}
 
 		private final String getFoDMicroserviceName(JSONMap release) {
 			return release.getPath("microserviceName", String.class);
@@ -246,7 +255,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 				LOG.debug("FoD release has no syncable scans; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
 			} else {
 				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
-				createLinkedSSCApplicationVersion(fodApplicationName, fodReleaseWithMicroserviceName, release.get("releaseId", String.class));
+				createLinkedSSCApplicationVersion(fodApplicationName, fodReleaseWithMicroserviceName, release);
 			}
 		}
 
@@ -266,15 +275,17 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * @param sscVersionName
 		 * @param linkedFoDReleaseId
 		 */
-		private void createLinkedSSCApplicationVersion(String sscApplicationName, String sscVersionName, String linkedFoDReleaseId) {
+		private void createLinkedSSCApplicationVersion(String sscApplicationName, String sscVersionName, JSONMap fodRelease) {
 			ConfigAutoCreate autoCreateVersionsConfig = config.getSsc().getAutoCreateVersions();
-			sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
+			String applicationVersionId = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
 				.applicationName(sscApplicationName).versionName(sscVersionName)
 				.versionDescription("Automatically created for FoD Release")
 				.autoAddRequiredAttributes(true)
-				.attributes(getSyncConfigAttributesMap(linkedFoDReleaseId))
 				.issueTemplateName(autoCreateVersionsConfig.getIssueTemplateName())
 				.execute();
+			// We update application version attributes separately. to avoid uncommitted application
+			// versions in case of any errors.
+			updateApplicationVersionAttributes(applicationVersionId, fodRelease);
 		}
 
 		/**
@@ -292,10 +303,39 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 					sscApplicationVersionId, fodReleaseId);
 			} else {
 				LOG.debug("Linking existing SSC application version id {} to FoD release id {}", sscApplicationVersionId, fodReleaseId);
-				sscConn.api(SSCApplicationVersionAttributeAPI.class).updateApplicationVersionAttributes(
-						sscApplicationVersionId, getSyncConfigAttributesMap(fodReleaseId));
+				updateApplicationVersionAttributes(sscApplicationVersionId, release);
 			}
 			
+		}
+
+		private void updateApplicationVersionAttributes(String sscApplicationVersionId, JSONMap release) {
+			SSCApplicationVersionAttributeAPI attrApi = sscConn.api(SSCApplicationVersionAttributeAPI.class);
+			attrApi.updateApplicationVersionAttributes(sscApplicationVersionId, 
+					getSyncConfigAttributesMap(getFoDReleaseId(release)));
+			try {
+				MultiValueMap<String, Object> configurableAttributesMap = getConfigurableAttributesMap(release);
+				if ( !configurableAttributesMap.isEmpty() ) {
+					attrApi.updateApplicationVersionAttributes(sscApplicationVersionId, configurableAttributesMap);
+				}
+			} catch (Exception e) {
+				// We consider this a 'best effort' operation, so just log a warning
+				LOG.warn("Error updating SSC application version with configurable attributes", e);
+			}
+		}
+
+		private MultiValueMap<String, Object> getConfigurableAttributesMap(JSONMap release) {
+			MultiValueMap<String, Object> result = new LinkedMultiValueMap<>();
+			config.getSsc().getAttributeExpressions().entrySet().forEach(e->addConfigurableAttributeEntry(result, e, release));
+			return result;
+		}
+
+		private void addConfigurableAttributeEntry(MultiValueMap<String, Object> result, Entry<String, List<String>> entry, JSONMap release) {
+			for ( String expr : entry.getValue() ) {
+				Object value = SpringExpressionUtil.evaluateTemplateExpression(release, expr, Object.class);
+				if ( value!=null ) {
+					result.add(entry.getKey(), value);
+				}
+			}
 		}
 
 		/**
