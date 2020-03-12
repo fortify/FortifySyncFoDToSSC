@@ -56,6 +56,8 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
     	private ConfigAutoCreate autoCreateVersions = new ConfigAutoCreate();
     	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
     	private final MultiValueMap<String, String> attributeExpressions = new LinkedMultiValueMap<>();
+    	private String applicationDescriptionExpression = "${application?.applicationDescription}";
+    	private String versionDescriptionExpression = "${releaseDescription}";
     }
     
     @Data public static class ConfigFoDQuery {

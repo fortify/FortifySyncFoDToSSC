@@ -104,7 +104,7 @@ sync.tasks.syncScans:
 sync.tasks.linkReleases:
   # Link releases every minute at the 30-second mark
   # Default value: '-' (task will not run automatically)
-  cronSchedule: '* * * * * *'
+  cronSchedule: '30 * * * * *'
   
   # FoD-related configuration for the linkReleases task
   fod:
@@ -152,8 +152,8 @@ sync.tasks.linkReleases:
     # versions that are newly linked.
     # Default values: Static, Dynamic
     enabledFoDScanTypes: 
-    - Static
-    # - Dynamic # Example to exclude dynamic scans from syncing by default
+      - Static
+      #- Dynamic # Example to exclude dynamic scans from syncing by default
     
     # For automatically linked SSC application versions, configure the application 
     # version attributes to be set. This applies to both newly created application 
@@ -168,6 +168,15 @@ sync.tasks.linkReleases:
       # Example to set SSC 'Application Type' attribute based on FoD 'Project type' attribute
       '[Application Type]': 
         - ${application?.attributesMap["Project type"]}
+      '[Known Compliance Obligations]':
+        - FISMA
+        - PCI
+    
+    # For automatically linked SSC application versions, configure the application
+    # and version description to be set.
+    # Default values: Copy application and release descriptions from FoD
+    applicationDescriptionExpression: ${application?.applicationDescription}
+    versionDescriptionExpression: (Imported from FoD) ${releaseDescription}
   
     autoCreateVersions: 
       # If enabled, automatically create new SSC application versions for FoD releases 

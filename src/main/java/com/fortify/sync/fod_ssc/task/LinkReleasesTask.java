@@ -279,13 +279,22 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			ConfigAutoCreate autoCreateVersionsConfig = config.getSsc().getAutoCreateVersions();
 			String applicationVersionId = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
 				.applicationName(sscApplicationName).versionName(sscVersionName)
-				.versionDescription("Automatically created for FoD Release")
+				.applicationDescription(getSSCApplicationDescription(fodRelease))
+				.versionDescription(getSSCVersionDescription(fodRelease))
 				.autoAddRequiredAttributes(true)
 				.issueTemplateName(autoCreateVersionsConfig.getIssueTemplateName())
 				.execute();
 			// We update application version attributes separately. to avoid uncommitted application
 			// versions in case of any errors.
 			updateApplicationVersionAttributes(applicationVersionId, fodRelease);
+		}
+
+		private String getSSCVersionDescription(JSONMap fodRelease) {
+			return SpringExpressionUtil.evaluateTemplateExpression(fodRelease, config.getSsc().getVersionDescriptionExpression(), String.class);
+		}
+
+		private String getSSCApplicationDescription(JSONMap fodRelease) {
+			return SpringExpressionUtil.evaluateTemplateExpression(fodRelease, config.getSsc().getApplicationDescriptionExpression(), String.class);
 		}
 
 		/**
