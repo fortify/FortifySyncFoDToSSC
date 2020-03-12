@@ -35,6 +35,8 @@ import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +47,6 @@ import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCArtifactAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
-import com.fortify.sync.fod_ssc.Constants;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI.SyncConfigPredicate;
@@ -87,6 +88,13 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	protected SyncScansTaskConfig getConfig() {
 		return config;
 	}
+	
+	@PostConstruct
+	public void createScansTempDir() {
+		File scansTempDir = new File(config.getScansTempDir());
+		LOG.info("Creating directory {} for temporary scan downloads", scansTempDir.getAbsolutePath());
+		scansTempDir.mkdirs();
+	}
 
 	/**
 	 * This method is called by our superclass based on the configured schedule. Based on the functionality
@@ -105,9 +113,9 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	 * Delete scan files older than the configured number of minutes.
 	 */
 	private final void deleteOldScans() {
-		String[] filesToDelete = new File(Constants.SCANS_TEMP_DIR).list(scansToBeDeletedFilter);
+		String[] filesToDelete = new File(config.getScansTempDir()).list(scansToBeDeletedFilter);
 		for ( String fileToDelete : filesToDelete ) {
-			new File(Constants.SCANS_TEMP_DIR, fileToDelete).delete();
+			new File(config.getScansTempDir(), fileToDelete).delete();
 		}
 	}
 	
@@ -225,7 +233,7 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	 * @param scanType
 	 */
 	private final void syncScanType(String sscApplicationVersionId, JSONMap fodRelease, String scanType) {
-		Path scanFile = Paths.get(Constants.SCANS_TEMP_DIR, getScanTempFileName(fodRelease, scanType));
+		Path scanFile = Paths.get(config.getScansTempDir(), getScanTempFileName(fodRelease, scanType));
 		// TODO Pipe FPR input stream from FoD directly to SSC, instead of using temp file
 		String fodReleaseId = fodRelease.get("releaseId",String.class);
 		LOG.info("Downloading {} scan from FoD release id {}", scanType, fodReleaseId);

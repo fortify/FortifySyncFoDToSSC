@@ -80,6 +80,12 @@ sync.tasks.syncScans:
   # Sync scans every minute at the 0-second mark
   # Default value: '-' (task will not run automatically)
   cronSchedule: '0 * * * * *'
+  
+  # Directory to temporarily store scans downloaded from FoD,
+  # Default value: ${sync.home}/scans
+  #         where ${sync.home} defaults to ${fortify.home}/FortifySyncFoDToSSC
+  #         where ${fortify.home} defaults to ~/.fortify 
+  scansTempDir: /tmp/scans
 
   # By default, scans downloaded from FoD will be deleted immediately after they
   # have been uploaded to SSC. Setting this property to a non-zero value will 

@@ -1,7 +1,5 @@
 package com.fortify.sync.fod_ssc;
 
-import java.io.File;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,7 +18,7 @@ import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
  * <ul>
  *  <li><code>main()</code> method for starting the utility:
  *      <ul>
- *       <li>Set various system properties by calling {@link Constants#setSystemProperties()}</li>
+ *       <li>Set various system properties by calling {@link Constants#updateSystemProperties()}</li>
  *       <li>Check whether the required configuration file exists</li>
  *       <li>Start the actual application by calling {@link SpringApplication#run(Class, String...)}</li>
  *      </ul></li>
@@ -38,34 +36,9 @@ public class FortifySyncFoDToSSCApplication {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Constants.setSystemProperties();
-		checkConfigFile();
-		createScansTempDir();
+		Constants.updateSystemProperties();
 		SpringApplication.run(FortifySyncFoDToSSCApplication.class, args);
 	}
-
-	/**
-	 * Check whether the required configuration file exists
-	 */
-	private static final void checkConfigFile() {
-		File configFile = new File(Constants.SYNC_CONFIG);
-		if ( !configFile.exists() ) {
-			throw new RuntimeException("Configuration file "+Constants.SYNC_CONFIG+" does not exist");
-		}
-		if ( !configFile.canRead() ) {
-			throw new RuntimeException("Configuration file "+Constants.SYNC_CONFIG+" cannot be read");
-		}
-	}
-	
-	/**
-	 * Create the directory for temporarily holding scan data
-	 * if it does not yet exist.
-	 */
-	private static final void createScansTempDir() {
-		new File(Constants.SCANS_TEMP_DIR).mkdir();
-	}
-	
-	
 	
 	/**
 	 * Get a {@link FoDAuthenticatingRestConnectionBuilder} instance, automatically

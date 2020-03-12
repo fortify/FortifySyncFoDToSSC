@@ -24,6 +24,12 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+
 /**
  * This class provides access to various constants like home directory locations
  * and configuration file locations. This class includes some logic to automatically
@@ -33,10 +39,9 @@ package com.fortify.sync.fod_ssc;
  *
  */
 public class Constants {
-	public static final String FORTIFY_HOME = getFortifyHome();
-	public static final String SYNC_HOME = getSyncHome();
-	public static final String SYNC_CONFIG = getSyncHome()+"/config.yml";
-	public static final String SCANS_TEMP_DIR = getSyncHome()+"/scans";
+	public static final String FORTIFY_HOME = _getFortifyHome();
+	public static final String SYNC_HOME = _getSyncHome(FORTIFY_HOME);
+	public static final String SYNC_CONFIG = _getSyncConfig(SYNC_HOME);
 	
 	/**
 	 * Private constructor to disallow instantiation
@@ -52,23 +57,67 @@ public class Constants {
 	 * </ul>
 	 * @return
 	 */
-	private static final String getFortifyHome() {
+	private static final String _getFortifyHome() {
 		String fortifyHome = System.getProperty("fortify.home", System.getenv("FORTIFY_HOME"));
-		return fortifyHome!=null?fortifyHome:"~/.fortify";
+		return fortifyHome!=null?fortifyHome:new File(System.getProperty("user.home"),"/.fortify").getAbsolutePath();
 	}
 	
 	/**
 	 * Get the home directory for the FoD to SSC sync utility.
 	 * @return 
 	 */
-	private static final String getSyncHome() {
-		return getFortifyHome()+"/FortifySyncFoDToSSC";
+	private static final String _getSyncHome(String fortifyHome) {
+		return System.getProperty("sync.home", fortifyHome+"/FortifySyncFoDToSSC");
 	}
+	
+	/**
+	 * Find the configuration file in one of the following locations, in this order:
+	 * <ul>
+	 *  <li>File name specified by the <code>sync.config</code> system property</li>
+	 *  <li>File named FortifySyncFoDToSSC.yml in the current working directory</li>
+	 *  <li>File named config.yml in the directory returned by {@link #_getSyncHome()}</li>
+	 * </ul>
+	 * @return 
+	 */
+	private static final String _getSyncConfig(String syncHome) {
+		String syncConfig = System.getProperty("sync.config");
+		if ( StringUtils.isNotBlank(syncConfig) && checkReadable(new File(syncConfig)) ) {
+			return syncConfig;
+		} else {
+			List<String> configFileNames = Arrays.asList(
+				new File(".","/FortifySyncFoDToSSC.yml").getAbsolutePath(), 
+				new File(syncHome, "/config.yml").getAbsolutePath());
+			for ( String fileName : configFileNames ) {
+				if ( isReadable(new File(fileName)) ) {
+					return fileName;
+				}
+			}
+			throw new IllegalArgumentException("Configuration file not found in any of the following locations: "+configFileNames);
+		}
+	}
+	
+	/**
+	 * Return true if given {@link File} exists and is readable
+	 */
+	private static final boolean isReadable(File file) {
+		return file.exists() && file.canRead();
+	}
+	
+	/**
+	 * Throw an exception if the given file does not exist or is not readable
+	 */
+	private static final boolean checkReadable(File file) {
+		if ( !isReadable(file) ) {
+			throw new IllegalArgumentException("Configuration file "+file.getAbsolutePath()+" does not exist or is not readable");
+		}
+		return true;
+	}
+	
 	
 	/**
 	 * Set various system properties for later use.
 	 */
-	public static final void setSystemProperties() {
+	public static final void updateSystemProperties() {
 		System.setProperty("fortify.home", FORTIFY_HOME);
 		System.setProperty("sync.home", SYNC_HOME);
 		System.setProperty("sync.config", SYNC_CONFIG);

@@ -24,6 +24,7 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.config;
 
+import com.fortify.sync.fod_ssc.Constants;
 import com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication;
 import com.fortify.sync.fod_ssc.task.SyncScansTask;
 
@@ -42,4 +43,5 @@ public class SyncScansTaskConfig implements IScheduleConfig {
 	private String cronSchedule = "-";
 	private long deleteScansOlderThanMinutes = 0;
 	private long ignoreScansOlderThanDays = 730; // Default FoD retention policy is 2 years
+	private String scansTempDir = Constants.SYNC_HOME+"/scans";
 }
