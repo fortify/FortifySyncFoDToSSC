@@ -63,7 +63,7 @@ import com.fortify.util.rest.json.JSONMap;
  *      The FoD release id with which the current SSC application version should be synchronized</li>
  *  <li><code>{@value SyncConfig#SSC_ATTR_INCLUDE_FOD_SCAN_TYPES}</code>: 
  *      The scan types to be synchronized (Static/Dynamic, and Mobile once supported by FoD)</li>
- *  <li><code>{@value SyncStatus#SSC_ATTR_FOD_SYNC_STATUS}</code>: 
+ *  <li><code>{@value SyncStatus#FOD_SYNC_STATUS}</code>: 
  *      The current synchronization status, as stored during the last sync</li>
  * </ul> 
  * 

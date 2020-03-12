@@ -24,10 +24,6 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +31,8 @@ import org.springframework.stereotype.Component;
 
 import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
-import com.fortify.client.ssc.api.SSCAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
-import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SSCSyncAttr;
 
 /**
  * Simple {@link Component} that tests for various prerequisites during application start-up. 
@@ -76,14 +71,6 @@ public class PrerequisitesTester {
 	@Autowired
 	public final void testSSCAttributes(SSCAuthenticatingRestConnection conn) {
 		LOG.info("Testing whether SSC can be contacted, and all required application attributes have been defined");
-		final Set<String> requiredAttrs = new HashSet<>(Arrays.asList(SyncAPI.getRequiredSSCApplicationAttributeNames()));
-		conn.api(SSCAttributeAPI.class)
-			.queryAttributeDefinitions()
-			.paramFields("name")
-			.build()
-			.processAll(json->requiredAttrs.remove(json.get("name", String.class)));
-		if ( requiredAttrs.size()>0 ) {
-			throw new IllegalStateException("The following required application attributes are not defined on SSC: "+requiredAttrs);
-		}
+		SSCSyncAttr.checkAndCreateSSCAttributeDefinitions(conn);
 	}
 }

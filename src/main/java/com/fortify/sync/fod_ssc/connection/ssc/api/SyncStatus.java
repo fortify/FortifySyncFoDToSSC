@@ -40,7 +40,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fortify.client.ssc.api.SSCAttributeAPI;
+import com.fortify.client.ssc.api.SSCApplicationVersionAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.util.rest.json.JSONMap;
 
@@ -65,8 +65,7 @@ import lombok.Setter;
  */
 @Data
 public final class SyncStatus {
-	private static final String SSC_ATTR_FOD_SYNC_STATUS = "FoD Sync - Status";
-	static final String[] SSC_REQUIRED_ATTRS = {SSC_ATTR_FOD_SYNC_STATUS};
+	private static final String SSC_ATTR_FOD_SYNC_STATUS = SSCSyncAttr.FOD_SYNC_STATUS.getAttributeName();
 	private static final Logger LOG = LoggerFactory.getLogger(SyncAPI.class);
 	private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	
@@ -85,7 +84,7 @@ public final class SyncStatus {
 			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
 			attributes.add(SSC_ATTR_FOD_SYNC_STATUS, asSyncStatusString());
-			sscConn.api(SSCAttributeAPI.class)
+			sscConn.api(SSCApplicationVersionAttributeAPI.class)
 				.updateApplicationVersionAttributes(sscApplicationVersionId, attributes);
 		}
 	}

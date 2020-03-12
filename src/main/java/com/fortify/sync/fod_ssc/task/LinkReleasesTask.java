@@ -40,7 +40,7 @@ import com.fortify.client.fod.api.query.builder.FoDApplicationsQueryBuilder;
 import com.fortify.client.fod.api.query.builder.FoDReleasesQueryBuilder;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
-import com.fortify.client.ssc.api.SSCAttributeAPI;
+import com.fortify.client.ssc.api.SSCApplicationVersionAttributeAPI;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.AbstractFoDQueryConfig;
@@ -292,7 +292,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 					sscApplicationVersionId, fodReleaseId);
 			} else {
 				LOG.debug("Linking existing SSC application version id {} to FoD release id {}", sscApplicationVersionId, fodReleaseId);
-				sscConn.api(SSCAttributeAPI.class).updateApplicationVersionAttributes(
+				sscConn.api(SSCApplicationVersionAttributeAPI.class).updateApplicationVersionAttributes(
 						sscApplicationVersionId, getSyncConfigAttributesMap(fodReleaseId));
 			}
 			
