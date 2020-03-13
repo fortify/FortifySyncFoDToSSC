@@ -10,9 +10,6 @@ scanOpts="-b fortify-client-api -scan"
 
 set -x
 
-# Remove any old FPR file
-rm -f ${projectName}.fpr
-
 # Clean our build model
 sourceanalyzer -b ${projectName} -clean
 
