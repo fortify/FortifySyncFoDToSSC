@@ -38,6 +38,7 @@ import java.util.Date;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +77,7 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	private static final String PFX_SCAN_FILE_NAME = "FoDScan-";
 	private static final Logger LOG = LoggerFactory.getLogger(SyncScansTask.class);
 	private static final SimpleDateFormat FMT_FOD_DATE = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-	private static final SimpleDateFormat FMT_TIMESTAMP = new SimpleDateFormat("yyyyMMdd-HHmmss.SSS");
+	private static final FastDateFormat FMT_TIMESTAMP = FastDateFormat.getInstance("yyyyMMdd-HHmmss.SSS");
 	@Autowired private SyncScansTaskConfig config;
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
@@ -288,7 +289,9 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	private static final Date parseFoDDate(String dateString) {
 		if ( dateString == null ) { return null; }
 		try {
-			return FMT_FOD_DATE.parse(StringUtils.substringBefore(dateString, "."));
+			synchronized (FMT_FOD_DATE) { // Avoid potential Format.parse()-related race conditions
+				return FMT_FOD_DATE.parse(StringUtils.substringBefore(dateString, "."));
+			}
 		} catch ( ParseException e ) {
 			throw new RuntimeException("Error parsing scan date "+dateString+" returned by FoD", e);
 		}
