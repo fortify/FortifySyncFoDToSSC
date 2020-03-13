@@ -35,3 +35,5 @@ bin/
 ### Sample scans & logs ###
 samples/**/scans/**
 samples/**/logs/**
+
+*.fpr
