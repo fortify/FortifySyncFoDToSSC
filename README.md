@@ -148,3 +148,8 @@ root directory:
 You will need to have Java JDK 1.8 or later installed. Once built, the binary
 jar file can be found in the build/libs folder, which you can optionally copy to 
 any location on your system.
+
+
+# Licensing
+
+See [LICENSE.TXT](LICENSE.TXT)
