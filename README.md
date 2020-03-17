@@ -149,6 +149,12 @@ You will need to have Java JDK 1.8 or later installed. Once built, the binary
 jar file can be found in the build/libs folder, which you can optionally copy to 
 any location on your system.
 
+## IDE's
+
+This project uses Lombok. In order to have your IDE compile this project without errors, 
+you may need to add Lombok support to your IDE. Please see https://projectlombok.org/setup/overview 
+for more information.
+
 
 # Licensing
 
