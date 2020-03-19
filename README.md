@@ -98,8 +98,8 @@ and may be changed. Although it is recommended to use the same category for all 
 you may move them to either the `Organization` or `Business` category.
 
 The `FoD Sync - Status` attribute should only be modified by the utility, hence the recommendation 
-to hide this field. However, you may want to (temporarily) make this field visible for debugging or 
-testing purposes.
+to define this as a hidden attribute. However, you may want to (temporarily) make this attribute 
+visible for debugging or testing purposes.
 
 Similarly, the `FoD Sync - Release Id` and `FoD Sync - Include Scan Types` attributes are 
 visible by default, in order to allow SSC users to manually link SSC application versions 
