@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI;
+import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionCategory;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionType;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCCreateAttributeDefinitionBuilder;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCCreateAttributeDefinitionBuilder.SSCAttributeDefinitionOption;
@@ -35,16 +36,18 @@ import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.util.rest.json.JSONMap;
 
 public enum SSCSyncAttr {
-	INCLUDE_FOD_SCAN_TYPES("FoD Sync - Include Scan Types", SSCAttributeDefinitionType.MULTIPLE, "Static", "Dynamic"),
-	FOD_RELEASE_ID("FoD Sync - Release Id", SSCAttributeDefinitionType.INTEGER),
-	FOD_SYNC_STATUS("FoD Sync - Status", SSCAttributeDefinitionType.LONG_TEXT);
+	INCLUDE_FOD_SCAN_TYPES("FoD Sync - Include Scan Types", SSCAttributeDefinitionType.MULTIPLE, false, "Static", "Dynamic"),
+	FOD_RELEASE_ID("FoD Sync - Release Id", SSCAttributeDefinitionType.INTEGER, false),
+	FOD_SYNC_STATUS("FoD Sync - Status", SSCAttributeDefinitionType.LONG_TEXT, true);
 	
 	private final String attributeName;
 	private final SSCAttributeDefinitionType attributeType;
+	private final boolean hidden;
 	private final String[] attributeOptionNames;
-	SSCSyncAttr(String attributeName, SSCAttributeDefinitionType attributeType, String... attributeOptionNames) {
+	SSCSyncAttr(String attributeName, SSCAttributeDefinitionType attributeType, boolean hidden, String... attributeOptionNames) {
 		this.attributeName = attributeName;
 		this.attributeType = attributeType;
+		this.hidden = hidden;
 		this.attributeOptionNames = attributeOptionNames;
 	}
 	
@@ -56,10 +59,16 @@ public enum SSCSyncAttr {
 		return attributeType;
 	}
 	
+	public boolean isHidden() {
+		return hidden;
+	}
+	
 	public JSONMap createAttributeDefinition(SSCAuthenticatingRestConnection conn) {
 		SSCCreateAttributeDefinitionBuilder builder = conn.api(SSCAttributeDefinitionAPI.class).createAttributeDefinition()
 			.name(getAttributeName())
 			.description("Created by FortifySyncFoDToSSC")
+			.category(SSCAttributeDefinitionCategory.TECHNICAL)
+			.hidden(isHidden())
 			.type(getAttributeType());
 		if ( attributeOptionNames!=null ) {
 			for ( String attributeOptionName : attributeOptionNames ) {
