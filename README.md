@@ -78,20 +78,20 @@ to have an SSC administrator create these attributes beforehand, for example if 
 want to provide the `Edit Attribute Definition` permission to the utility. 
 
 * `FoD Sync - Release Id`
-  * `Category`: `Technical`
-  * `Type`: `Integer`
-  * `Hidden`: no
+  * Category: Technical
+  * Type: Integer
+  * Hidden: no
 * `FoD Sync - Include Scan Types`
-  * `Category`: `Technical`
-  * `Type`: `List of Values - Multiple Selection`
-  * `Hidden`: no
-  * `Values`: 
-    * `Static`
-    * `Dynamic`
+  * Category: Technical
+  * Type: List of Values - Multiple Selection
+  * Hidden: no
+  * Values: 
+    * Static
+    * Dynamic
 * `FoD Sync - Status`
-  * `Category`: `Technical`
-  * `Type`: `Text - Multiple Lines`
-  * `Hidden`: yes
+  * Category: Technical
+  * Type: Text - Multiple Lines
+  * Hidden: yes
 
 The values for the `Category` and `Hidden` properties listed above are just default values 
 and may be changed. Although it is recommended to use the same category for all attributes, 
