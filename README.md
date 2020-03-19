@@ -107,34 +107,6 @@ to FoD releases, and modify the scan types to be synchronized. If you would like
 the utility fully manage the process of linking FoD releases with SSC application versions,
 you may opt to hide these attributes.
 
-### Utility Configuration File
-
-The utility requires a configuration file in order to operate; the utility will terminate with 
-an error message if no configuration file can be found. Sample configuration files can be found 
-in the [config](config/) directory:
-
-* FortifySyncFoD
-
-named `config.yml` to be available in a directory 
-named  `<fortify.home>/FortifySyncFoDToSSC/`. Here, the `<fortify.home>` directory 
-can be an existing Fortify SSC or SCA home directory, or you can use a separate home directory for 
-this utility. The utility uses it's own utility-specific sub-directory in the `<fortify.home>`
-directory, and doesn't share any configuration or data with any of the other Fortify products.
-
-The utility will use the following methods to locate the fortify.home directory, in this order:
-1. Specified on the Java command line with `-Dfortify.home=[directory]`
-2. Specified as an environment variable `FORTIFY_HOME=[directory]`
-3. Default value `~/.fortify`
-
-Sample configuration files can be found in the GitHub repository at
-https://github.com/fortify-ps/FortifySyncFoDToSSC/tree/1.0-SNAPSHOT/samples. 
-
-The `cronSchedule` property is in extended cron format, using 6 fields to specify
-second, minute, hour, day of month, month, and day of week. To disable either 
-the `syncScans` or `linkReleases` you can either remove/comment out the 
-corresponding `cronSchedule` property, or specify '-' as the property value. See
-https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html for more information about the supported cron format.
-
 ### Running the utility
 
 The utility is provided as a single runnable JAR file; you will need to have a Java 
@@ -165,7 +137,7 @@ of the Jar file downloaded from Bintray (see [Related Links](#related-links)) or
   * Will by default store temporary downloaded scans in `/some/dir`
   
 Instead of setting the `fortify.home` system property as illustrated in some of the examples above, the
-utility also allows the Fortify home directory to be specified as the `FORTIFY_HOME` environment variable.
+utility also allows the Fortify home directory to be specified using the `FORTIFY_HOME` environment variable.
 
 The utility will output some log messages to the console; there is no further interaction
 with the utility at the moment. The utility will run the various synchronization tasks 
