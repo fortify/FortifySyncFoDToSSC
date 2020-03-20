@@ -49,22 +49,64 @@ you will need to define the corresponding application attributes in FoD.
 
 ### SSC Configuration - Authentication
 
-TODO: Update this section, include info about SSC tokens versus user credentials. 
+It is recommended to created a dedicated user role for this utility, specifying the exact
+permissions required for running the utility. In general, the following permissions are 
+required by the utility:
 
-Define the user account to be used by the utility to connect with SSC. This user must
-  have a role with the following permissions:
-    
-    * Universal access
-    * Add application versions
-    * ~~Approve analysis results upload? (do we want to auto-approve?)~~
-    * ~~Delete application versions? (do we want to auto-delete if release in FoD is deleted?)~~
-    * Edit application versions? (do we need this to set custom attributes, access, ... while creating app version?)
-    * ~~Manage application version access? (do we need this if we specify users while creating version?)~~
-    * ~~Manage attribute definitions: to auto-create FoD Sync-related attributes~~ (not yet implemented)
-    * Upload analysis results
-    * View application versions
-    * View attribute definitions
-    * View issue templates, process templates, ... (is this necessary to determine default issue template?)
+* Universal access
+* Add application versions
+* Edit application versions
+* Manage attribute definitions
+* Upload analysis results
+* View application versions
+* View attribute definitions
+* View issue templates
+
+Obviously, if for example automatic creation of SSC application versions is disabled
+in the utility configuration, the `Add application versions` permission will not be 
+required. As such, depending on the utility configuration, you may be able to remove 
+some of these permissions.
+
+The utility supports accessing SSC using either user credentials or an authentication token.
+If you wish to use an authentication token, you will need to follow the following additional
+steps:
+
+* Define a custom token type in SSC's `WEB-INF/internal/serviceContext.xml` file as listed below
+  * Adjust the `maxDaysToLive` property value to your needs
+  * Note that this token definition has not yet been tested; based on rejected access errors you
+  may need to add additional permitted actions
+* Restart SSC
+* Use FortifyClient or the SSC web interface to generate an authentication token of type `FortifySyncFoDToSSC`
+  * Make sure to generate the token for the dedicated user that has been assigned the dedicated role
+  described above.
+
+```xml
+	<bean id="FortifySyncFoDToSSC" class="com.fortify.manager.security.ws.AuthenticationTokenSpec">
+		<property name="key" value="FortifySyncFoDToSSC"/>
+		<property name="maxDaysToLive" value="90" />
+		<property name="actionPermitted">
+			<list value-type="java.lang.String">
+				<value>GET=/api/v\d+/attributeDefinitions</value>
+				<value>GET=/api/v\d+/issueTemplates</value>
+				<value>GET=/api/v\d+/projectVersions</value>
+				<value>POST=/api/v\d+/attributeDefinitions</value>
+				<value>POST=/api/v\d+/fileTokens</value>
+				<value>POST=/api/v\d+/projectVersions</value>
+				<value>POST=/upload/resultFileUpload.html</value>
+				<value>PUT=/api/v\d+/projectVersions/\d+/action</value>
+				<value>PUT=/api/v\d+/projectVersions/\d+/attributes</value>
+			</list>
+		</property>
+		<property name="terminalActions">
+			<list value-type="java.lang.String">
+				<value>InvalidateTokenRequest</value>
+				<value>DELETE=/api/v\d+/auth/token</value>
+			</list>
+		</property>
+	</bean>
+
+```
+
 
 
 ### SSC Configuration - Application Version Attributes
