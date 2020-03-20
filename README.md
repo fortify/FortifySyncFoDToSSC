@@ -20,10 +20,7 @@ on a configurable schedule:
   * **Release versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-release?order=desc&sort=fileLastModified&basePath=&tab=files  
   * **Beta versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-beta?order=desc&sort=fileLastModified&basePath=&tab=files
   * **Sample configuration files**: [config](config)
-* **Branches**: https://github.com/fortify-ps/FortifySyncFoDToSSC/branches  
-  _Please make sure you are viewing the README file for the correct SNAPSHOT branch or release tag_
 * **Automated builds**: https://travis-ci.com/fortify-ps/FortifySyncFoDToSSC
-* **OWASP Dependency Check website**: https://owasp.org/www-project-dependency-check/ 
 
 
 ## Usage
