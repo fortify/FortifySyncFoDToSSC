@@ -46,6 +46,8 @@ apply from: "${gradleHelpersLocation}/version-helper.gradle"
 version = getProjectVersionAsBetaOrRelease(true)
 ext {
 	bintrayDownloadContainerName = getProjectVersionAsBetaOrRelease(false)
+	betaOrReleaseLabel = getBetaOrReleaseLabel()
+	bintrayPkgName = "${rootProject.name}-${betaOrReleaseLabel}"
 	projectLicense = 'MIT'
 }
 

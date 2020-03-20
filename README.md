@@ -13,16 +13,17 @@ on a configurable schedule:
   * Check whether any new scans exist on the FoD release
   * If so, download the scan from FoD and upload to SSC
   
- ### Related Links
+### Related Links
 
+* **Downloads**:  
+  _Beta versions may be unstable or non-functional. The `*-licenseReport.zip` and `*-dependencySources.zip` files are for informational purposes only and do not need to be downloaded._
+  * **Release versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-release?order=desc&sort=fileLastModified&basePath=&tab=files  
+  * **Beta versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-beta?order=desc&sort=fileLastModified&basePath=&tab=files
+  * **Sample configuration files**: [config](config)
 * **Branches**: https://github.com/fortify-ps/FortifySyncFoDToSSC/branches  
-  Current development is usually done on latest snapshot branch, which may not be the default branch
+  _Please make sure you are viewing the README file for the correct SNAPSHOT branch or release tag_
 * **Automated builds**: https://travis-ci.com/fortify-ps/FortifySyncFoDToSSC
-* **Binaries**: https://bintray.com/beta/#/fortify-ps/binaries/FortifySyncFoDToSSC?tab=files  
-  Sort by `Updated` column to find latest
-* **Sample configuration files**: [config](config)
-* **OWASP Dependency Check resources**:
-  * https://owasp.org/www-project-dependency-check/ 
+* **OWASP Dependency Check website**: https://owasp.org/www-project-dependency-check/ 
 
 
 ## Usage
