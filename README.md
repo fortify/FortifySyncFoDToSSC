@@ -53,14 +53,14 @@ It is recommended to created a dedicated user role for this utility, specifying 
 permissions required for running the utility. In general, the following permissions are 
 required by the utility:
 
-* Universal access
-* Add application versions
-* Edit application versions
-* Manage attribute definitions
-* Upload analysis results
-* View application versions
-* View attribute definitions
-* View issue templates
+* `Universal access`
+* `Add application versions`
+* `Edit application versions`
+* `Manage attribute definitions`
+* `Upload analysis results`
+* `View application versions`
+* `View attribute definitions`
+* `View issue templates`
 
 Obviously, if for example automatic creation of SSC application versions is disabled
 in the utility configuration, the `Add application versions` permission will not be 
@@ -80,6 +80,7 @@ steps:
   * Make sure to generate the token for the dedicated user that has been assigned the dedicated role
   described above.
 
+#### Token definition to be added to `WEB-INF/internal/serviceContext.xml`
 ```xml
 	<bean id="FortifySyncFoDToSSC" class="com.fortify.manager.security.ws.AuthenticationTokenSpec">
 		<property name="key" value="FortifySyncFoDToSSC"/>
