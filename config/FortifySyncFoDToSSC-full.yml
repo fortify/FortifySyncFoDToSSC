@@ -1,5 +1,22 @@
 # This sample configuration file lists all available configuration settings.
 
+# All configuration settings support the use of property references denoted by 
+# ${propertyName}. At runtime, these property references will be replaced with 
+# the value of the corresponding Java system property or system environment
+# variable. For example, a property reference like ${FOD_URL} below would be
+# replaced with either the value of the FOD_URL environment variable, or the
+# value for this property can be specified through the -DFOD_URL=... option
+# on the Java command line.
+#
+# The following property references are automatically defined, but can be 
+# overridden on the Java command line:
+# - ${fortify.home}
+#   Default value: FORTIFY_HOME environment variable if defined,
+#                  ~/.fortify otherwise
+# - ${sync.home}
+#   Default value: ${fortify.home}/FortifySyncFoDToSSC
+
+
 # Configure log levels for both utility and 3rd-party packages
 # Valid log levels: TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
 logging.level:
@@ -79,6 +96,7 @@ sync.connections.ssc:
 sync.tasks.syncScans:
   # Sync scans every minute at the 0-second mark
   # Default value: '-' (task will not run automatically)
+  # Cron format: '<second> <minute> <hour> <day of month> <month> <day of week>'
   cronSchedule: '0 * * * * *'
   
   # Directory to temporarily store scans downloaded from FoD,
@@ -110,6 +128,7 @@ sync.tasks.syncScans:
 sync.tasks.linkReleases:
   # Link releases every minute at the 30-second mark
   # Default value: '-' (task will not run automatically)
+  # Cron format: '<second> <minute> <hour> <day of month> <month> <day of week>'
   cronSchedule: '30 * * * * *'
   
   # FoD-related configuration for the linkReleases task
