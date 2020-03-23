@@ -90,11 +90,13 @@ steps:
 				<value>GET=/api/v\d+/attributeDefinitions</value>
 				<value>GET=/api/v\d+/issueTemplates</value>
 				<value>GET=/api/v\d+/projectVersions</value>
+				<value>GET=/api/v\\d+/projectVersions/\\d+/attributes</value>
+				<value>POST=/api/v\d+/bulk</value>
 				<value>POST=/api/v\d+/attributeDefinitions</value>
 				<value>POST=/api/v\d+/fileTokens</value>
 				<value>POST=/api/v\d+/projectVersions</value>
 				<value>POST=/upload/resultFileUpload.html</value>
-				<value>PUT=/api/v\d+/projectVersions/\d+/action</value>
+				<value>PUT=/api/v\d+/projectVersions/\d+</value>
 				<value>PUT=/api/v\d+/projectVersions/\d+/attributes</value>
 			</list>
 		</property>
