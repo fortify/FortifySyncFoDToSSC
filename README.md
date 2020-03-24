@@ -5,21 +5,21 @@ and scans with Fortify Software Security Center (SSC). This functionality is bas
 on a configurable schedule: 
 
 * Link Releases task:
-  * Based on configurable filtering criteria, look for FoD releases that have not yet been linked to an SSC application version
-  * If a similarly named SSC application version already exists, link the FoD release to that application version
-  * Optionally create a new SSC application version with the same name as the FoD application release 
+	* Based on configurable filtering criteria, look for FoD releases that have not yet been linked to an SSC application version
+	* If a similarly named SSC application version already exists, link the FoD release to that application version
+	* Optionally create a new SSC application version with the same name as the FoD application release 
 * Sync Scans task:
-  * Iterate over all SSC application versions that have been previously linked (either automatically or manually) to an FoD release
-  * Check whether any new scans exist on the FoD release
-  * If so, download the scan from FoD and upload to SSC
+	* Iterate over all SSC application versions that have been previously linked (either automatically or manually) to an FoD release
+	* Check whether any new scans exist on the FoD release
+	* If so, download the scan from FoD and upload to SSC
   
 ### Related Links
 
 * **Downloads**:  
   _Beta versions may be unstable or non-functional. The `*-licenseReport.zip` and `*-dependencySources.zip` files are for informational purposes only and do not need to be downloaded._
-  * **Release versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-release?order=desc&sort=fileLastModified&basePath=&tab=files  
-  * **Beta versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-beta?order=desc&sort=fileLastModified&basePath=&tab=files
-  * **Sample configuration files**: [config](config)
+	* **Release versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-release?order=desc&sort=fileLastModified&basePath=&tab=files  
+	* **Beta versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-beta?order=desc&sort=fileLastModified&basePath=&tab=files
+	* **Sample configuration files**: [config](config)
 * **Automated builds**: https://travis-ci.com/fortify-ps/FortifySyncFoDToSSC
 
 
@@ -33,11 +33,11 @@ will be used by the utility to connect to FoD. Following is a list of requiremen
 depending on the chosen authentication method:
 
 * User authentication:
-  * Required: Permissions to view all applications and releases
-  * Recommended: Use a Personal Access Token with `view-apps` and `view-issues` scopes
-  * Recommended: Do not use the same user account for any other integrations
+	* Required: Permissions to view all applications and releases
+	* Recommended: Use a Personal Access Token with `view-apps` and `view-issues` scopes
+	* Recommended: Do not use the same user account for any other integrations
 * Client credentials:
-  * Required: Read Only role
+	* Required: Read Only role
 
 ### FoD Configuration - Application Attributes
 
@@ -72,12 +72,12 @@ If you wish to use an authentication token, you will need to follow the followin
 steps:
 
 * Define a custom token type in SSC's `WEB-INF/internal/serviceContext.xml` file as listed below
-  * Adjust the `maxDaysToLive` property value to your needs
-  * Note that this token definition has not yet been tested; based on rejected access errors you
+	* Adjust the `maxDaysToLive` property value to your needs
+	* Note that this token definition has not yet been tested; based on rejected access errors you
   may need to add additional permitted actions
 * Restart SSC
 * Use FortifyClient or the SSC web interface to generate an authentication token of type `FortifySyncFoDToSSC`
-  * Make sure to generate the token for the dedicated user that has been assigned the dedicated role
+	* Make sure to generate the token for the dedicated user that has been assigned the dedicated role
   described above.
 
 #### Token definition to be added to `WEB-INF/internal/serviceContext.xml`
@@ -121,20 +121,20 @@ to have an SSC administrator create these attributes beforehand, for example if 
 want to provide the `Manage attribute definitions` permission to the utility. 
 
 * `FoD Sync - Release Id`
-  * Category: Technical
-  * Type: Integer
-  * Hidden: no
+	* Category: Technical
+	* Type: Integer
+	* Hidden: no
 * `FoD Sync - Include Scan Types`
-  * Category: Technical
-  * Type: List of Values - Multiple Selection
-  * Hidden: no
-  * Values: 
-    * Static
-    * Dynamic
+	* Category: Technical
+	* Type: List of Values - Multiple Selection
+	* Hidden: no
+	* Values: 
+		* Static
+		* Dynamic
 * `FoD Sync - Status`
-  * Category: Technical
-  * Type: Text - Multiple Lines
-  * Hidden: yes
+	* Category: Technical
+	* Type: Text - Multiple Lines
+	* Hidden: yes
 
 The values for the `Category` and `Hidden` properties listed above are just default values 
 and may be changed. Although it is recommended to use the same category for all attributes, 
@@ -165,8 +165,8 @@ The utility will look for the configuration file in these locations, in this ord
 * `${sync.config}`
 * `FortifySyncFoDToSSC.yml` in the current working directory
 * `${sync.home}/config.yml`
-  * Where `${sync.home}` defaults to `${fortify.home}/FortifySyncFoDToSSC`
-  * Where `${fortify.home}` defaults to the value of the FORTIFY_HOME environment variable, or `<user home>/.fortify` if not defined
+	* Where `${sync.home}` defaults to `${fortify.home}/FortifySyncFoDToSSC`
+	* Where `${fortify.home}` defaults to the value of the FORTIFY_HOME environment variable, or `<user home>/.fortify` if not defined
 
 Note that by default, the utility will also create a `${sync.home}/scans` directory to temporarily store downloaded scans, 
 so modifying the `${sync.home}` property will affect both the default configuration file location and
@@ -176,13 +176,13 @@ sample configuration file also configures `${sync.home}/logs` as the log files l
 Some examples:
 
 * When not overriding any of the system properties, the utility will look for the configuration file in these two locations:
-  * `FortifySyncFoDToSSC.yml` in the current working directory
-  * `<user home>/.fortify/FortifySyncFoDToSSC/config.yml`
+	* `FortifySyncFoDToSSC.yml` in the current working directory
+	* `<user home>/.fortify/FortifySyncFoDToSSC/config.yml`
 * `-Dsync.config=/my/custom/config.file` will load the configuration from `/my/custom/config.file`
 * `-Dsync.home=/my/sync/home` will:
-  * Load the configuration file from `/my/sync/home/config.yml` (assuming no `FortifySyncFoDToSSC.yml` exists in the current working directory)
-  * Temporarily store downloaded scans in the `/my/sync/home/scans` directory (if not overridden in configuration file)
-  * May store log files in the `/my/sync/home/logs` directory when using the [config/FortifySyncFoDToSSC-full.yml](config/FortifySyncFoDToSSC-full.yml) sample configuration.
+	* Load the configuration file from `/my/sync/home/config.yml` (assuming no `FortifySyncFoDToSSC.yml` exists in the current working directory)
+	* Temporarily store downloaded scans in the `/my/sync/home/scans` directory (if not overridden in configuration file)
+	* May store log files in the `/my/sync/home/logs` directory when using the [config/FortifySyncFoDToSSC-full.yml](config/FortifySyncFoDToSSC-full.yml) sample configuration.
 * `-Dfortify.home=/my/fortify/home`, or setting the `FORTIFY_HOME` environment variable, will change the default
   value for the `sync.home` property to `/my/fortify/home/FortifySyncFoDToSSC`, with similar effects as changing that 
   property directly. 
@@ -206,11 +206,11 @@ The generic command for starting the utility is as follows:
 Following are some examples:
 
 * `java -jar <jar-file>`
-  * Will look for configuration file located at `<user home>/.fortify/FortifySyncFoDToSSC/config.yml`, or `FortifySyncFoDToSSC.yml` in current directory
-  * Will by default store temporary downloaded scans in `<user home>/.fortify/FortifySyncFoDToSSC/scans`
+	* Will look for configuration file located at `<user home>/.fortify/FortifySyncFoDToSSC/config.yml`, or `FortifySyncFoDToSSC.yml` in current directory
+	* Will by default store temporary downloaded scans in `<user home>/.fortify/FortifySyncFoDToSSC/scans`
 * `java -Dfortify.home=/some/dir -jar <jar-file>`
-  * Will look for configuration file located at `/some/dir/FortifySyncFoDToSSC/config.yml`, or `FortifySyncFoDToSSC.yml` in current directory
-  * Will by default store temporary downloaded scans in `/some/dir/FortifySyncFoDToSSC/scans`
+	* Will look for configuration file located at `/some/dir/FortifySyncFoDToSSC/config.yml`, or `FortifySyncFoDToSSC.yml` in current directory
+	* Will by default store temporary downloaded scans in `/some/dir/FortifySyncFoDToSSC/scans`
 
 Once runinng, the utility will output some log messages to the console; there is no further interaction with 
 the utility at the moment. The utility will run the various synchronization tasks in the background, according 
@@ -261,13 +261,13 @@ the main project directory.
 
 * `./gradlew tasks --all`: List all available tasks
 * Build: (plugin binary will be stored in `build/libs`)
-  * `./gradlew clean build`: Clean and build the project
-  * `./gradlew build`: Build the project without cleaning
-  * `./gradlew dist`: Build distribution zip
+	* `./gradlew clean build`: Clean and build the project
+	* `./gradlew build`: Build the project without cleaning
+	* `./gradlew dist`: Build distribution zip
 * Version management:
-  * `./gradlew printProjectVersion`: Print the current version
-  * `./gradlew startSnapshotBranch -PnextVersion=2.0`: Start a new snapshot branch for an upcoming `2.0` version
-  * `./gradlew releaseSnapshot`: Merge the changes from the current branch to the master branch, and create release tag
+	* `./gradlew printProjectVersion`: Print the current version
+	* `./gradlew startSnapshotBranch -PnextVersion=2.0`: Start a new snapshot branch for an upcoming `2.0` version
+	* `./gradlew releaseSnapshot`: Merge the changes from the current branch to the master branch, and create release tag
 * `./fortify-scan.sh`: Run a Fortify scan; requires Fortify SCA to be installed
 
 Note that the version management tasks operate only on the local repository; you will need to manually
@@ -280,8 +280,8 @@ The various version-related Gradle tasks assume the following versioning methodo
 * The `master` branch is only used for creating tagged release versions
 * A branch named `<version>-SNAPSHOT` contains the current snapshot state for the upcoming release
 * Optionally, other branches can be used to develop individual features, perform bug fixes, ...
-  * However, note that the Gradle build may be unable to identify a correct version number for the project
-  * As such, only builds from tagged versions or from a `<version>-SNAPSHOT` branch should be published to a Maven repository
+	* However, note that the Gradle build may be unable to identify a correct version number for the project
+	* As such, only builds from tagged versions or from a `<version>-SNAPSHOT` branch should be published to a Maven repository
 
 ### Automated Builds & publishing
 
