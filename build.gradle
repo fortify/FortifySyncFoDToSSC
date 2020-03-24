@@ -100,15 +100,29 @@ test {
 	useJUnitPlatform()
 }
 
+task dist(type: Zip) {
+	dependsOn 'build'
+	archiveFileName = "${rootProject.name}-${project.version}.zip"
+	destinationDirectory = file("$buildDir/dist")
+	from("${libsDir}") {
+		include "${rootProject.name}-${project.version}.jar"
+	}
+	from("${projectDir}") {
+		include "config/**/*"
+		include "LICENSE.TXT"
+		include "README.md"
+	}
+}
+
 bintray {
     filesSpec {
-       from("build/libs") { // Plugin jar
-          include "*.jar"
+       from("${buildDir}/dist") {
+          include "${rootProject.name}-${project.version}.zip"
        }
-       from("build/dist") { // Dependency sources and licenses
+       from("${buildDir}/thirdparty") {
           include "*.zip"
        }
        into '.'
     }
 }
-_bintrayRecordingCopy.dependsOn 'build', 'packageDependencySourcesAndLicenses'
+_bintrayRecordingCopy.dependsOn 'build', 'dist', 'packageDependencySourcesAndLicenses'
