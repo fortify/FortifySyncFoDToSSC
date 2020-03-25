@@ -52,7 +52,7 @@ ext {
 	projectLicense = 'MIT'
 }
 
-apply from: "${gradleHelpersLocation}/dependency-sources-licenses-helper.gradle"
+apply from: "${gradleHelpersLocation}/thirdparty-helper.gradle"
 apply from: "${gradleHelpersLocation}/bintray-binaries-helper.gradle"
 apply from: "${gradleHelpersLocation}/readme2html.gradle"
 
@@ -119,12 +119,9 @@ task dist(type: Zip) {
 bintray {
     filesSpec {
        from("${buildDir}/dist") {
-          include "${rootProject.name}-${project.version}.zip"
-       }
-       from("${buildDir}/thirdparty") {
           include "*.zip"
        }
        into '.'
     }
 }
-_bintrayRecordingCopy.dependsOn 'build', 'dist', 'packageDependencySourcesAndLicenses'
+_bintrayRecordingCopy.dependsOn 'clean', 'dist', 'distThirdParty'
