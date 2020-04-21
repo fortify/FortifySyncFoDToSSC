@@ -38,7 +38,8 @@ import com.fortify.util.rest.json.JSONMap;
 public enum SSCSyncAttr {
 	INCLUDE_FOD_SCAN_TYPES("FoD Sync - Include Scan Types", SSCAttributeDefinitionType.MULTIPLE, false, "Static", "Dynamic"),
 	FOD_RELEASE_ID("FoD Sync - Release Id", SSCAttributeDefinitionType.INTEGER, false),
-	FOD_SYNC_STATUS("FoD Sync - Status", SSCAttributeDefinitionType.LONG_TEXT, true);
+	// TODO FOD_SYNC_STATUS currently visible due to SSC Defect 324058, should be hidden once SSC is fixed 
+	FOD_SYNC_STATUS("FoD Sync - Status", SSCAttributeDefinitionType.LONG_TEXT, false); 
 	
 	private final String attributeName;
 	private final SSCAttributeDefinitionType attributeType;
