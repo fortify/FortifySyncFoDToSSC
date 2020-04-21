@@ -177,7 +177,7 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
 			MultiValueMap<String, Object> attributes = syncStatus.asAttributesMap();
 			sscConn.api(SSCApplicationVersionAttributeAPI.class).updateApplicationVersionAttributes(sscApplicationVersionId)
-				.withHelper(attributeDefinitionHelper)
+				.withAttributeDefinitionHelper(attributeDefinitionHelper)
 				.byNameOrId(attributes)
 				.execute();
 		}

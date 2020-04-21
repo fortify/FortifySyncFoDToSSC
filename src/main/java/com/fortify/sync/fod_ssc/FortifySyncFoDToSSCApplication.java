@@ -13,6 +13,8 @@ import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection.FoDAuthenticatingRestConnectionBuilder;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionHelper;
+import com.fortify.client.ssc.api.SSCIssueTemplateAPI;
+import com.fortify.client.ssc.api.SSCIssueTemplateAPI.SSCIssueTemplateHelper;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection.SSCAuthenticatingRestConnectionBuilder;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
@@ -56,7 +58,7 @@ public class FortifySyncFoDToSSCApplication {
 	@Bean
 	@ConfigurationProperties("sync.connections.fod") 
 	public FoDAuthenticatingRestConnectionBuilder fodConnectionBuilder() {
-		return FoDAuthenticatingRestConnection.builder().useCache(false).multiThreaded(true).scopes("view-apps", "view-issues");
+		return FoDAuthenticatingRestConnection.builder().multiThreaded(true).scopes("view-apps", "view-issues");
 	}
 	
 	/**
@@ -67,7 +69,7 @@ public class FortifySyncFoDToSSCApplication {
 	@Bean
 	@ConfigurationProperties("sync.connections.ssc") 
 	public SSCAuthenticatingRestConnectionBuilder sscConnectionBuilder() {
-		return SSCAuthenticatingRestConnection.builder().useCache(false).multiThreaded(true);
+		return SSCAuthenticatingRestConnection.builder().multiThreaded(true);
 	}
 	
 	/**
@@ -100,7 +102,7 @@ public class FortifySyncFoDToSSCApplication {
 	 */
 	@Bean
 	public FoDAuthenticatingRestConnection fodConnection() {
-		return testFoDConnection(fodConnectionBuilder().useCache(false).build());
+		return testFoDConnection(fodConnectionBuilder().build());
 	}
 	
 	/**
@@ -127,7 +129,7 @@ public class FortifySyncFoDToSSCApplication {
 	 */
 	@Bean
 	public SSCAuthenticatingRestConnection sscConnection() {
-		return testSSCConnection(sscConnectionBuilder().useCache(false).build());
+		return testSSCConnection(sscConnectionBuilder().build());
 	}
 	
 	/**
@@ -142,7 +144,13 @@ public class FortifySyncFoDToSSCApplication {
 		return conn;
 	}
 	
-	@Bean SSCAttributeDefinitionHelper sscAttributeDefinitionHelper() {
+	@Bean 
+	public SSCAttributeDefinitionHelper sscAttributeDefinitionHelper() {
 		return sscConnection().api(SSCAttributeDefinitionAPI.class).getAttributeDefinitionHelper();
+	}
+	
+	@Bean 
+	public SSCIssueTemplateHelper sscIssueTemplateHelper() {
+		return sscConnection().api(SSCIssueTemplateAPI.class).getIssueTemplateHelper();
 	}
 }

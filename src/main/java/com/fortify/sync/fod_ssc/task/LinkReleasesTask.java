@@ -46,6 +46,7 @@ import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAttributeAPI;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionHelper;
+import com.fortify.client.ssc.api.SSCIssueTemplateAPI.SSCIssueTemplateHelper;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.AbstractFoDQueryConfig;
@@ -76,6 +77,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
 	@Autowired private SSCAttributeDefinitionHelper attributeDefinitionHelper;
+	@Autowired private SSCIssueTemplateHelper issueTemplateHelper;
 	@Autowired private IHasSyncableScanChecker hasSyncableScanChecker;
 	
 	/**
@@ -214,7 +216,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			if ( config.getSsc().isLinkOnlyIfSyncableScans() && !hasSyncableScans(release) ) {
 				LOG.debug("Ignoring FoD release {}:{} as it doesn't have syncable scans", fodApplicationName, fodReleaseWithMicroserviceName);
 			} else {
-				JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseWithMicroserviceName, false);
+				JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseWithMicroserviceName);
 				if ( sscApplicationVersion==null ) {
 					processUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(release);
 				} else {
@@ -283,6 +285,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			ConfigAutoCreate autoCreateVersionsConfig = config.getSsc().getAutoCreateVersions();
 			String applicationVersionId = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
 				.withAttributeDefinitionHelper(attributeDefinitionHelper)
+				.withIssueTemplateHelper(issueTemplateHelper)
 				.applicationName(sscApplicationName).versionName(sscVersionName)
 				.applicationDescription(getSSCApplicationDescription(fodRelease))
 				.versionDescription(getSSCVersionDescription(fodRelease))
@@ -325,14 +328,14 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		private void updateApplicationVersionAttributes(String sscApplicationVersionId, JSONMap release) {
 			SSCApplicationVersionAttributeAPI attrApi = sscConn.api(SSCApplicationVersionAttributeAPI.class);
 			attrApi.updateApplicationVersionAttributes(sscApplicationVersionId)
-				.withHelper(attributeDefinitionHelper)
+				.withAttributeDefinitionHelper(attributeDefinitionHelper)
 				.byNameOrId(getSyncConfigAttributesMap(getFoDReleaseId(release)))
 				.execute();
 			try {
 				MultiValueMap<String, Object> configurableAttributesMap = getConfigurableAttributesMap(release);
 				if ( !configurableAttributesMap.isEmpty() ) {
 					attrApi.updateApplicationVersionAttributes(sscApplicationVersionId)
-						.withHelper(attributeDefinitionHelper)
+						.withAttributeDefinitionHelper(attributeDefinitionHelper)
 						.byNameOrId(configurableAttributesMap)
 						.execute();
 				}

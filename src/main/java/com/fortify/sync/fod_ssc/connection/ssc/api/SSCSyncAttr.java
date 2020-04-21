@@ -27,6 +27,9 @@ package com.fortify.sync.fod_ssc.connection.ssc.api;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionCategory;
 import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionType;
@@ -41,6 +44,7 @@ public enum SSCSyncAttr {
 	// TODO FOD_SYNC_STATUS currently visible due to SSC Defect 324058, should be hidden once SSC is fixed 
 	FOD_SYNC_STATUS("FoD Sync - Status", SSCAttributeDefinitionType.LONG_TEXT, false); 
 	
+	private static final Logger LOG = LoggerFactory.getLogger(SSCSyncAttr.class);
 	private final String attributeName;
 	private final SSCAttributeDefinitionType attributeType;
 	private final boolean hidden;
@@ -85,6 +89,7 @@ public enum SSCSyncAttr {
 		for ( SSCSyncAttr attr : SSCSyncAttr.values() ) {
 			if ( !attributeDefinitionsByNameAndId.containsKey(attr.getAttributeName()) ) {
 				try {
+					LOG.info("Creating SSC application version attribute {}",attr.getAttributeName());
 					attr.createAttributeDefinition(conn);
 				} catch ( Exception e ) {
 					// We collect all attribute names that do not exist and cannot be created,
