@@ -43,10 +43,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 
 import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
+import com.fortify.client.ssc.api.SSCApplicationVersionAttributeAPI;
 import com.fortify.client.ssc.api.SSCArtifactAPI;
+import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionHelper;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
@@ -81,6 +84,7 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	@Autowired private SyncScansTaskConfig config;
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
+	@Autowired private SSCAttributeDefinitionHelper attributeDefinitionHelper;
 
 	/**
 	 * Allow our superclass to access our configuration
@@ -104,7 +108,7 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	 */
 	protected void runTask() {
 		try {
-			sscConn.api(SyncAPI.class).processSyncData(this::processSyncedApplicationVersion, SyncConfigPredicate.IS_SYNC_ENABLED);
+			sscConn.api(SyncAPI.class).processSyncData(attributeDefinitionHelper, this::processSyncedApplicationVersion, SyncConfigPredicate.IS_SYNC_ENABLED);
 		} finally {
 			deleteOldScans();
 		}
@@ -165,7 +169,18 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 				processSyncedApplicationVersion(sscApplicationVersionId, syncStatus, scanTypes, fodRelease);
 			}
 		}
-		syncStatus.updateApplicationVersion(sscConn, sscApplicationVersionId);
+		updateApplicationVersion(sscApplicationVersionId, syncStatus);
+	}
+	
+	private final void updateApplicationVersion(String sscApplicationVersionId, SyncStatus syncStatus) {
+		if ( syncStatus.isModified() ) {
+			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
+			MultiValueMap<String, Object> attributes = syncStatus.asAttributesMap();
+			sscConn.api(SSCApplicationVersionAttributeAPI.class).updateApplicationVersionAttributes(sscApplicationVersionId)
+				.withHelper(attributeDefinitionHelper)
+				.byNameOrId(attributes)
+				.execute();
+		}
 	}
 
 	private void processSyncedApplicationVersion(String sscApplicationVersionId, SyncStatus syncStatus, String[] scanTypes, JSONMap fodRelease) {

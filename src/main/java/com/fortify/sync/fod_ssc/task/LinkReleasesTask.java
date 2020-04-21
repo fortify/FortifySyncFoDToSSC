@@ -45,6 +45,7 @@ import com.fortify.client.fod.api.query.builder.FoDReleasesQueryBuilder;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAttributeAPI;
+import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionHelper;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.AbstractFoDQueryConfig;
@@ -74,6 +75,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 	@Autowired private LinkReleasesTaskConfig config;
 	@Autowired private FoDAuthenticatingRestConnection fodConn;
 	@Autowired private SSCAuthenticatingRestConnection sscConn;
+	@Autowired private SSCAttributeDefinitionHelper attributeDefinitionHelper;
 	@Autowired private IHasSyncableScanChecker hasSyncableScanChecker;
 	
 	/**
@@ -112,7 +114,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * been linked before.
 		 */
 		public FoDUnlinkedReleasesProcessor() {
-			this.linkedVersionsAndReleasesIds = sscConn.api(SyncAPI.class).getLinkedVersionsAndReleasesIds();
+			this.linkedVersionsAndReleasesIds = sscConn.api(SyncAPI.class).getLinkedVersionsAndReleasesIds(attributeDefinitionHelper);
 		}
 		
 		/**
@@ -209,11 +211,15 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			
 			LOG.debug("Processing unlinked FoD release {}:{}", fodApplicationName, fodReleaseWithMicroserviceName);
 			
-			JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseWithMicroserviceName, false);
-			if ( sscApplicationVersion==null ) {
-				processUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(release);
+			if ( config.getSsc().isLinkOnlyIfSyncableScans() && !hasSyncableScans(release) ) {
+				LOG.debug("Ignoring FoD release {}:{} as it doesn't have syncable scans", fodApplicationName, fodReleaseWithMicroserviceName);
 			} else {
-				processUnlinkedFoDReleaseWithMatchingSSCApplicationVersion(release, sscApplicationVersion);
+				JSONMap sscApplicationVersion = sscConn.api(SSCApplicationVersionAPI.class).getApplicationVersionByName(fodApplicationName, fodReleaseWithMicroserviceName, false);
+				if ( sscApplicationVersion==null ) {
+					processUnlinkedFoDReleaseWithoutMatchingSSCApplicationVersion(release);
+				} else {
+					processUnlinkedFoDReleaseWithMatchingSSCApplicationVersion(release, sscApplicationVersion);
+				}
 			}
 		}
 
@@ -251,8 +257,6 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			
 			if ( !config.getSsc().getAutoCreateVersions().isEnabled() ) {
 				LOG.debug("SSC application version creation disabled; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
-			} else if ( config.getSsc().getAutoCreateVersions().isCreateOnlyIfSyncableScans() && !hasSyncableScans(release) ) {
-				LOG.debug("FoD release has no syncable scans; not creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
 			} else {
 				LOG.debug("Creating SSC application version {}:{} for unlinked FoD release", fodApplicationName, fodReleaseWithMicroserviceName);
 				createLinkedSSCApplicationVersion(fodApplicationName, fodReleaseWithMicroserviceName, release);
@@ -278,6 +282,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		private void createLinkedSSCApplicationVersion(String sscApplicationName, String sscVersionName, JSONMap fodRelease) {
 			ConfigAutoCreate autoCreateVersionsConfig = config.getSsc().getAutoCreateVersions();
 			String applicationVersionId = sscConn.api(SSCApplicationVersionAPI.class).createApplicationVersion()
+				.withAttributeDefinitionHelper(attributeDefinitionHelper)
 				.applicationName(sscApplicationName).versionName(sscVersionName)
 				.applicationDescription(getSSCApplicationDescription(fodRelease))
 				.versionDescription(getSSCVersionDescription(fodRelease))
@@ -319,12 +324,17 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 
 		private void updateApplicationVersionAttributes(String sscApplicationVersionId, JSONMap release) {
 			SSCApplicationVersionAttributeAPI attrApi = sscConn.api(SSCApplicationVersionAttributeAPI.class);
-			attrApi.updateApplicationVersionAttributes(sscApplicationVersionId, 
-					getSyncConfigAttributesMap(getFoDReleaseId(release)));
+			attrApi.updateApplicationVersionAttributes(sscApplicationVersionId)
+				.withHelper(attributeDefinitionHelper)
+				.byNameOrId(getSyncConfigAttributesMap(getFoDReleaseId(release)))
+				.execute();
 			try {
 				MultiValueMap<String, Object> configurableAttributesMap = getConfigurableAttributesMap(release);
 				if ( !configurableAttributesMap.isEmpty() ) {
-					attrApi.updateApplicationVersionAttributes(sscApplicationVersionId, configurableAttributesMap);
+					attrApi.updateApplicationVersionAttributes(sscApplicationVersionId)
+						.withHelper(attributeDefinitionHelper)
+						.byNameOrId(configurableAttributesMap)
+						.execute();
 				}
 			} catch (Exception e) {
 				// We consider this a 'best effort' operation, so just log a warning

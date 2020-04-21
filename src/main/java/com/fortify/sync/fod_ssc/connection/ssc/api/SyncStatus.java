@@ -40,8 +40,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fortify.client.ssc.api.SSCApplicationVersionAttributeAPI;
-import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.util.rest.json.JSONMap;
 
 import lombok.AccessLevel;
@@ -79,14 +77,10 @@ public final class SyncStatus {
 		return parse(attributeValuesByName.get(SSC_ATTR_FOD_SYNC_STATUS, String.class));
 	}
 	
-	public final void updateApplicationVersion(SSCAuthenticatingRestConnection sscConn, String sscApplicationVersionId) {
-		if ( isModified() ) {
-			LOG.debug("Updating sync status for application version id {}", sscApplicationVersionId);
-			MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
-			attributes.add(SSC_ATTR_FOD_SYNC_STATUS, asSyncStatusString());
-			sscConn.api(SSCApplicationVersionAttributeAPI.class)
-				.updateApplicationVersionAttributes(sscApplicationVersionId, attributes);
-		}
+	public final MultiValueMap<String,Object> asAttributesMap() {
+		MultiValueMap<String, Object> attributes = new LinkedMultiValueMap<>();
+		attributes.add(SSC_ATTR_FOD_SYNC_STATUS, asSyncStatusString());
+		return attributes;
 	}
 	
 	/**

@@ -53,6 +53,7 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
     }
     
     @Data public static class ConfigJobLinkReleasesSSC {
+    	private boolean linkOnlyIfSyncableScans = true;
     	private ConfigAutoCreate autoCreateVersions = new ConfigAutoCreate();
     	private String[] enabledFoDScanTypes = new String[] {"Static", "Dynamic"};
     	private final MultiValueMap<String, String> attributeExpressions = new LinkedMultiValueMap<>();
@@ -80,7 +81,6 @@ public class LinkReleasesTaskConfig implements IScheduleConfig {
 
     @Data public static class ConfigAutoCreate {
     	private boolean enabled = true;
-    	private boolean createOnlyIfSyncableScans = true;
     	private String issueTemplateName = "Prioritized High Risk Issue Template";
 	}
 }

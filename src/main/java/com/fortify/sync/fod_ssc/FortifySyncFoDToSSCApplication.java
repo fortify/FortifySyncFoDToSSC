@@ -1,17 +1,23 @@
 package com.fortify.sync.fod_ssc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import com.fortify.client.fod.api.FoDReleaseAPI;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection;
 import com.fortify.client.fod.connection.FoDAuthenticatingRestConnection.FoDAuthenticatingRestConnectionBuilder;
+import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI;
+import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionHelper;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection.SSCAuthenticatingRestConnectionBuilder;
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
+import com.fortify.sync.fod_ssc.connection.ssc.api.SSCSyncAttr;
 
 /**
  * This {@link SpringBootApplication} class provides the following functionality:
@@ -31,6 +37,8 @@ import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 @SpringBootApplication
 @EnableScheduling
 public class FortifySyncFoDToSSCApplication {
+	private static final Logger LOG = LoggerFactory.getLogger(FortifySyncFoDToSSCApplication.class);
+	
 	/**
 	 * Start the application
 	 * @param args
@@ -85,24 +93,56 @@ public class FortifySyncFoDToSSCApplication {
 	}
 	
 	/**
-	 * Instantiate the {@link FoDAuthenticatingRestConnection} instance
-	 * used to connect to FoD, based on the connection builder returned
-	 * by {@link #fodConnectionBuilder()}. 
+	 * Instantiate and test the {@link FoDAuthenticatingRestConnection} 
+	 * instance used to connect to FoD, based on the connection builder 
+	 * returned by {@link #fodConnectionBuilder()}. 
 	 * @return
 	 */
 	@Bean
 	public FoDAuthenticatingRestConnection fodConnection() {
-		return fodConnectionBuilder().useCache(false).build();
+		return testFoDConnection(fodConnectionBuilder().useCache(false).build());
 	}
 	
 	/**
-	 * Instantiate the {@link SSCAuthenticatingRestConnection} instance
-	 * used to connect to SSC, based on the connection builder returned
-	 * by {@link #sscConnectionBuilder()}. 
+	 * Test whether we can successfully connect to FoD by executing a 
+	 * simple, lightweight query.
+	 * 
+	 * @param conn
+	 */
+	public final FoDAuthenticatingRestConnection testFoDConnection(FoDAuthenticatingRestConnection conn) {
+		LOG.info("Testing whether FoD can be contacted");
+		conn.api(FoDReleaseAPI.class)
+			.queryReleases()
+			.maxResults(1)
+			.paramFields("releaseId")
+			.build().getUnique();
+		return conn;
+	}
+	
+	/**
+	 * Instantiate and test the {@link SSCAuthenticatingRestConnection} 
+	 * instance used to connect to SSC, based on the connection builder 
+	 * returned by {@link #sscConnectionBuilder()}. 
 	 * @return
 	 */
 	@Bean
 	public SSCAuthenticatingRestConnection sscConnection() {
-		return sscConnectionBuilder().useCache(false).build();
+		return testSSCConnection(sscConnectionBuilder().useCache(false).build());
+	}
+	
+	/**
+	 * Test whether the necessary application attributes have been defined on SSC.
+	 * This also implicitly tests whether we can successfully connect to SSC.
+	 * 
+	 * @param conn
+	 */
+	public final SSCAuthenticatingRestConnection testSSCConnection(SSCAuthenticatingRestConnection conn) {
+		LOG.info("Testing whether SSC can be contacted, and all required application attributes have been defined");
+		SSCSyncAttr.checkAndCreateSSCAttributeDefinitions(conn);
+		return conn;
+	}
+	
+	@Bean SSCAttributeDefinitionHelper sscAttributeDefinitionHelper() {
+		return sscConnection().api(SSCAttributeDefinitionAPI.class).getAttributeDefinitionHelper();
 	}
 }

@@ -81,7 +81,7 @@ public enum SSCSyncAttr {
 	
 	public static final void checkAndCreateSSCAttributeDefinitions(SSCAuthenticatingRestConnection conn) {
 		Set<String> missingAttrs = new HashSet<String>();
-		JSONMap attributeDefinitionsByNameAndId = conn.api(SSCAttributeDefinitionAPI.class).getAttributeDefinitionsByNameAndId(false, "name", "type");
+		JSONMap attributeDefinitionsByNameAndId = conn.api(SSCAttributeDefinitionAPI.class).getAttributeDefinitionHelper().getAttributeDefinitionsByNameAndId();
 		for ( SSCSyncAttr attr : SSCSyncAttr.values() ) {
 			if ( !attributeDefinitionsByNameAndId.containsKey(attr.getAttributeName()) ) {
 				try {

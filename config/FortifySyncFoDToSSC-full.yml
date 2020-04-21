@@ -179,6 +179,16 @@ sync.tasks.linkReleases:
     enabledFoDScanTypes: 
       - Static
       #- Dynamic # Example to exclude dynamic scans from syncing by default
+      
+    # Link SSC application versions only if there are scans to be synchronized. If set
+    # to true (default), the utility will only link (and optionally create) application 
+    # versions for FoD releases that have one of the scan types defined in the 
+    # enabledFoDScanTypes property above, and at least one of those scans is not older 
+    # than the ignoreScansOlderThanDays property defined in the syncScans configuration. 
+    # If set to false, SSC application versions will be linked (and optionally created)
+    # independent of whether there are actually any scans to be synchronized.
+    # Default value: true
+    linkOnlyIfSyncableScans: true
     
     # For automatically linked SSC application versions, configure the application 
     # version attributes to be set. This applies to both newly created application 
@@ -209,16 +219,6 @@ sync.tasks.linkReleases:
       # only be linked if the corresponding SSC application version already exists.
       # Default value: true
       enabled: true
-      
-      # Create an SSC application version only if there are scans to be synchronized. If set
-      # to true (default), the utility will only create application versions for FoD releases
-      # that have one of the scan types defined in the enabledFoDScanTypes property above,
-      # and at least one of those scans is not older than the ignoreScansOlderThanDays 
-      # property defined in the syncScans configuration. If set to false, SSC application 
-      # versions will be created for any release that matches the FoD filters configured above,
-      # independent of whether there are actually any scans to be synchronized.
-      # Default value: true
-      createOnlyIfSyncableScans: false
       
       # Configure the issue template name to be used for newly created SSC application versions.
       issueTemplateName: Prioritized High Risk Issue Template

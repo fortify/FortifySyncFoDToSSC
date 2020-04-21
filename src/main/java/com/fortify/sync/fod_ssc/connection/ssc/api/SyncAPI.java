@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 
 import com.fortify.client.ssc.api.AbstractSSCAPI;
 import com.fortify.client.ssc.api.SSCApplicationVersionAPI;
-import com.fortify.client.ssc.api.query.builder.EmbedType;
+import com.fortify.client.ssc.api.SSCAttributeDefinitionAPI.SSCAttributeDefinitionHelper;
 import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection;
 import com.fortify.util.rest.json.JSONMap;
 
@@ -58,9 +58,9 @@ public final class SyncAPI extends AbstractSSCAPI {
 	 * and which FoD releases are currently linked to an SSC application version.
 	 * @return
 	 */
-	public final LinkedVersionsAndReleasesIds getLinkedVersionsAndReleasesIds() {
+	public final LinkedVersionsAndReleasesIds getLinkedVersionsAndReleasesIds(SSCAttributeDefinitionHelper attributeDefinitionHelper) {
 		LinkedVersionsAndReleasesIds result = new LinkedVersionsAndReleasesIds();
-		processSyncData(result, SyncConfigPredicate.IS_LINKED);
+		processSyncData(attributeDefinitionHelper, result, SyncConfigPredicate.IS_LINKED);
 		return result;
 	}
 	
@@ -79,11 +79,11 @@ public final class SyncAPI extends AbstractSSCAPI {
 	 * @param syncDataConsumer
 	 * @param predicate
 	 */
-	public final void processSyncData(final Consumer<SyncData> syncDataConsumer, SyncConfigPredicate predicate) {
+	public final void processSyncData(SSCAttributeDefinitionHelper attributeDefinitionHelper, final Consumer<SyncData> syncDataConsumer, SyncConfigPredicate predicate) {
 		conn().api(SSCApplicationVersionAPI.class)
 			.queryApplicationVersions()
 			.paramFields("id")
-			.embedAttributeValuesByName(EmbedType.PRELOAD)
+			.embedAttributeValuesByName(attributeDefinitionHelper)
 			.build().processAll(new SyncDataConsumerWrapper(syncDataConsumer, predicate));
 	}
 	
