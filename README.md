@@ -1,5 +1,7 @@
 # Fortify FoD-SSC Sync
 
+## Introduction
+
 This stand-alone utility allows for automated, scheduled synchronization of Fortify on Demand (FoD) application releases
 and scans with Fortify Software Security Center (SSC). This functionality is based on two tasks that run automatically 
 on a configurable schedule: 
@@ -13,7 +15,7 @@ on a configurable schedule:
 	* Check whether any new scans exist on the FoD release
 	* If so, download the scan from FoD and upload to SSC
   
-### <a name="related-links">Related Links</a>
+### Related Links
 
 * **Downloads**:  
   _Beta versions may be unstable or non-functional. The `*-licenseReport.zip` and `*-dependencySources.zip` files are for informational purposes only and do not need to be downloaded._
@@ -24,9 +26,9 @@ on a configurable schedule:
 * **Automated builds**: https://travis-ci.com/fortify-ps/FortifySyncFoDToSSC
 
 
-## <a name="usage">Usage</a>
+## FoD Configuration
 
-### <a name="fod-configuration---authentication">FoD Configuration - Authentication</a>
+### FoD Authentication
 
 The utility supports accessing FoD using either user credentials or client credentials. Depending on the 
 authentication method you want to use, you will either need to define an API key or a user account that
@@ -40,7 +42,7 @@ depending on the chosen authentication method:
 * Client credentials:
 	* Required: Read Only role
 
-### <a name="fod-configuration---application-attributes">FoD Configuration - Application Attributes</a>
+### FoD Application Attributes
 
 The utility allows for configuring FoD application and release filters to control which releases get 
 synchronized with SSC automatically. These filters may be based on FoD application attributes. For
@@ -48,7 +50,9 @@ example, the utility could be configured to only synchronize releases from FoD a
 the custom `SyncWithSSC` application attribute set to `true`. Obviously, if you wish to use such filters,
 you will need to define the corresponding application attributes in FoD.
 
-### <a name="ssc-configuration---authentication">SSC Configuration - Authentication</a>
+## SSC Configuration
+
+### SSC Authentication
 
 It is recommended to created a dedicated user role for this utility, specifying the exact
 permissions required for running the utility. In general, the following permissions are 
@@ -81,7 +85,7 @@ steps:
 	* Make sure to generate the token for the dedicated user that has been assigned the dedicated role
   described above.
 
-#### <a name="token-definition-to-be-added-to-web-infinternalservicecontextxml">Token definition to be added to `WEB-INF/internal/serviceContext.xml`</a>
+#### Token definition to be added to `WEB-INF/internal/serviceContext.xml`
 ```xml
 	<bean id="FortifySyncFoDToSSC" class="com.fortify.manager.security.ws.AuthenticationTokenSpec">
 		<property name="key" value="FortifySyncFoDToSSC"/>
@@ -112,8 +116,7 @@ steps:
 ```
 
 
-
-### <a name="ssc-configuration---application-version-attributes">SSC Configuration - Application Version Attributes</a>
+### SSC Application Version Attributes
 
 All state related to the synchronization process is stored in SSC application version
 attributes. If these attributes do not yet exist when running the utility for the first 
@@ -152,7 +155,7 @@ to FoD releases, and modify the scan types to be synchronized. If you would like
 the utility fully manage the process of linking FoD releases with SSC application versions,
 you may opt to hide these attributes.
 
-### <a name="utility-configuration">Utility Configuration</a>
+## Utility Configuration
 
 The utility requires a configuration file to operate. Sample configuration files are provided
 in the [config](config/) directory; you will need to download one of these configuration files
@@ -189,7 +192,7 @@ Some examples:
   property directly. 
 
 
-### <a name="running-the-utility">Running the utility</a>
+## Running the utility
 
 The utility is provided as a single runnable JAR file; you will need to have a Java 
 Runtime Environment (JRE) version 1.8 or later installed in order to run the utility.
@@ -217,9 +220,9 @@ Once runinng, the utility will output some log messages to the console; there is
 the utility at the moment. The utility will run the various synchronization tasks in the background, according 
 to the configured schedules.  
 
-### <a name="managing-mappings">Managing Mappings</a>
+## Managing Mappings
 
-### <a name="setting-up-a-manual-mapping">Setting up a manual mapping</a>
+### Setting up a manual mapping
 
 In some cases you may want to manually configure a mapping between an FoD release and SSC application version.
 The following steps will allow for manually configuring a mapping:
@@ -228,7 +231,7 @@ The following steps will allow for manually configuring a mapping:
 * Set the `FoD Sync - Release Id` attribute to the FoD release id that this SSC application version should be synchronized with
 * Set the `FoD Sync - Include Scan Types` attribute to one or more scan types that should be synchronized
 
-### <a name="disable-synchronization-for-specific-release">Disable synchronization for specific release</a>
+### Disable synchronization for specific release
 
 To temporarily or permanently disable synchronization for a specific application version, 
 simply deselect all scan types from the `FoD Sync - Include Scan Types` attribute. Likewise,
@@ -236,17 +239,17 @@ you can temporarily or permanently disable synchronization of a specific scan ty
 that scan type from the `FoD Sync - Include Scan Types` attribute.
 
 
-## <a name="information-for-developers">Information for developers</a>
+## Information for developers
 
 The following sections provide information that may be useful for developers of this utility.
 
-### <a name="ides">IDE's</a>
+### IDE's
 
 This project uses Lombok. In order to have your IDE compile this project without errors, 
 you may need to add Lombok support to your IDE. Please see https://projectlombok.org/setup/overview 
 for more information.
 
-### <a name="gradle">Gradle</a>
+### Gradle
 
 It is strongly recommended to build this project using the included Gradle Wrapper
 scripts; using other Gradle versions may result in build errors and other issues.
@@ -254,7 +257,7 @@ scripts; using other Gradle versions may result in build errors and other issues
 The Gradle build uses various helper scripts from https://github.com/fortify-ps/gradle-helpers;
 please refer to the documentation and comments in included scripts for more information. 
 
-### <a name="commonly-used-commands">Commonly used commands</a>
+### Commonly used commands
 
 All commands listed below use Linux/bash notation; adjust accordingly if you
 are running on a different platform. All commands are to be executed from
@@ -274,7 +277,7 @@ the main project directory.
 Note that the version management tasks operate only on the local repository; you will need to manually
 push any changes (including tags and branches) to the remote repository.
 
-### <a name="versioning">Versioning</a>
+### Versioning
 
 The various version-related Gradle tasks assume the following versioning methodology:
 
@@ -284,7 +287,7 @@ The various version-related Gradle tasks assume the following versioning methodo
 	* However, note that the Gradle build may be unable to identify a correct version number for the project
 	* As such, only builds from tagged versions or from a `<version>-SNAPSHOT` branch should be published to a Maven repository
 
-### <a name="automated-builds--publishing">Automated Builds & publishing</a>
+### Automated Builds & publishing
 
 Travis-CI builds are automatically triggered when there is any change in the project repository,
 for example due to pushing changes, or creating tags or branches. If applicable, binaries and related 
@@ -297,7 +300,7 @@ artifacts are automatically published to Bintray using the `bintrayUpload` task:
 See the [Related Links](#related-links) section for the relevant Travis-CI and Bintray links.
 
 
-# <a name="licensing">Licensing</a>
+## License
 See [LICENSE.TXT](LICENSE.TXT)
 
 
