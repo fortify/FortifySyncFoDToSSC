@@ -1,3 +1,18 @@
+<head>
+<x-dummy>
+<script language="JavaScript"><!--
+<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js" />
+<X-INCLUDE url="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" />
+<X-INCLUDE url="${gradleHelpersLocation}/spa_readme.js" />
+--></script>
+
+<style><!--
+<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/styles/github.min.css" />
+<X-INCLUDE url="${gradleHelpersLocation}/spa_readme.css" />
+--></style>
+</x-dummy>
+</head>
+
 # Fortify FoD-SSC Sync
 
 ## Introduction
@@ -163,7 +178,6 @@ and modify it according to your requirements. See the comments in the
 [config/FortifySyncFoDToSSC-full.yml](config/FortifySyncFoDToSSC-full.yml) sample file for more 
 information.
 
-<!-- Div is not supported on GitHub, so INCLUDE statement will not be shown -->
 <!-- TODO Move Style to class -->
 <div style="width: 95%; height: 25em; margin: auto; overflow:auto;">
 <pre><code class="yaml hljs">
@@ -326,17 +340,3 @@ See the [Related Links](#related-links) section for the relevant Travis-CI and B
 
 ## License
 See [LICENSE.TXT](LICENSE.TXT)
-
-
-<div>
-<script language="JavaScript"><!--
-<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js" />
-<X-INCLUDE url="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" />
-<X-INCLUDE url="${gradleHelpersLocation}/spa_readme.js" />
---></script>
-
-<style><!--
-<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/styles/github.min.css" />
-<X-INCLUDE url="${gradleHelpersLocation}/spa_readme.css" />
---></style>
-</div>
