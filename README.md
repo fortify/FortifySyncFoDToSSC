@@ -28,7 +28,7 @@ on a configurable schedule:
 
 ## FoD Configuration
 
-### FoD Authentication
+### Authentication
 
 The utility supports accessing FoD using either user credentials or client credentials. Depending on the 
 authentication method you want to use, you will either need to define an API key or a user account that
@@ -52,7 +52,7 @@ you will need to define the corresponding application attributes in FoD.
 
 ## SSC Configuration
 
-### SSC Authentication
+### Authentication
 
 It is recommended to created a dedicated user role for this utility, specifying the exact
 permissions required for running the utility. In general, the following permissions are 
