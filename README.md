@@ -28,21 +28,21 @@ on a configurable schedule:
 
 ## FoD Configuration
 
-### Authentication
+### Permissions
 
 The utility supports accessing FoD using either user credentials or client credentials. Depending on the 
 authentication method you want to use, you will either need to define an API key or a user account that
 will be used by the utility to connect to FoD. Following is a list of requirements and recommendations,
 depending on the chosen authentication method:
 
-* User authentication:
+* User authentication (with password or Personal Access Token):
 	* Required: Permissions to view all applications and releases
 	* Recommended: Use a Personal Access Token with `view-apps` and `view-issues` scopes
 	* Recommended: Do not use the same user account for any other integrations
 * Client credentials:
 	* Required: Read Only role
 
-### FoD Application Attributes
+### Attributes
 
 The utility allows for configuring FoD application and release filters to control which releases get 
 synchronized with SSC automatically. These filters may be based on FoD application attributes. For
@@ -50,9 +50,10 @@ example, the utility could be configured to only synchronize releases from FoD a
 the custom `SyncWithSSC` application attribute set to `true`. Obviously, if you wish to use such filters,
 you will need to define the corresponding application attributes in FoD.
 
+
 ## SSC Configuration
 
-### Authentication
+### Permissions
 
 It is recommended to created a dedicated user role for this utility, specifying the exact
 permissions required for running the utility. In general, the following permissions are 
@@ -72,20 +73,20 @@ in the utility configuration, the `Add application versions` permission will not
 required. As such, depending on the utility configuration, you may be able to remove 
 some of these permissions.
 
+### Authentication
+
 The utility supports accessing SSC using either user credentials or an authentication token.
 If you wish to use an authentication token, you will need to follow the following additional
 steps:
 
-* Define a custom token type in SSC's `WEB-INF/internal/serviceContext.xml` file as listed below
-	* Adjust the `maxDaysToLive` property value to your needs
-	* Note that this token definition has not yet been tested; based on rejected access errors you
-  may need to add additional permitted actions
+* Define a custom token type in SSC's `WEB-INF/internal/serviceContext.xml` file as listed below, adjusting
+ the `maxDaysToLive` property value to your needs
 * Restart SSC
 * Use FortifyClient or the SSC web interface to generate an authentication token of type `FortifySyncFoDToSSC`
 	* Make sure to generate the token for the dedicated user that has been assigned the dedicated role
   described above.
 
-#### Token definition to be added to `WEB-INF/internal/serviceContext.xml`
+**Token definition**
 ```xml
 	<bean id="FortifySyncFoDToSSC" class="com.fortify.manager.security.ws.AuthenticationTokenSpec">
 		<property name="key" value="FortifySyncFoDToSSC"/>
@@ -116,7 +117,7 @@ steps:
 ```
 
 
-### SSC Application Version Attributes
+### Attributes
 
 All state related to the synchronization process is stored in SSC application version
 attributes. If these attributes do not yet exist when running the utility for the first 
@@ -138,24 +139,22 @@ want to provide the `Manage attribute definitions` permission to the utility.
 * `FoD Sync - Status`
 	* Category: Technical
 	* Type: Text - Multiple Lines
-	* Hidden: yes
+	* Hidden: no
 
-The values for the `Category` and `Hidden` properties listed above are just default values 
-and may be changed. Although it is recommended to use the same category for all attributes, 
-you may move them to either the `Organization` or `Business` category instead of the default
-`Technical` category.
+Although it is recommended to use the same category for all attributes, you may move them to either 
+the `Organization` or `Business` category instead of the `Technical` category as listed here.
 
-The `FoD Sync - Status` attribute should only be modified by the utility, hence the recommendation 
-to define this as a hidden attribute. However, you may want to (temporarily) make this attribute 
-visible for debugging or testing purposes.
+It would make sense to define the `FoD Sync - Status` attribute as a hidden attribute, as the
+contents are not supposed to be viewed or edited by users. Similarly, if you would like to have
+the utility fully manage the process of linking FoD releases with SSC application versions, it
+would make sense to define the `FoD Sync - Release Id` and/or `FoD Sync - Include Scan Types`
+as hidden attributes. 
 
-Similarly, the `FoD Sync - Release Id` and `FoD Sync - Include Scan Types` attributes are 
-visible by default, in order to allow SSC users to manually link SSC application versions 
-to FoD releases, and modify the scan types to be synchronized. If you would like to have
-the utility fully manage the process of linking FoD releases with SSC application versions,
-you may opt to hide these attributes.
+Unfortunately, current SSC versions do not properly support setting or retrieving values for 
+hidden attributes through the SSC REST API. As such, for now all attributes must have the Hidden
+flag set to 'no' (i.e. all attributes must be visible).
 
-## Utility Configuration
+## Configuration File
 
 The utility requires a configuration file to operate. Sample configuration files are provided
 in the [config](config/) directory; you will need to download one of these configuration files
@@ -163,6 +162,7 @@ and modify it according to your requirements. See the comments in the
 [config/FortifySyncFoDToSSC-full.yml](config/FortifySyncFoDToSSC-full.yml) sample file for more 
 information.
 
+### Location 
 The utility will look for the configuration file in these locations, in this order, where 
 `${propertyName}` denotes a system property:
 
@@ -194,52 +194,67 @@ Some examples:
 
 ## Running the utility
 
+### Requirements
 The utility is provided as a single runnable JAR file; you will need to have a Java 
 Runtime Environment (JRE) version 1.8 or later installed in order to run the utility.
 Before running the utility, you will need to have prepared the utility configuration
-file; see the previous section for details.
+file; see [Utility Configuration](#utility-configuration)) for details.
 
+### Command Line
 The generic command for starting the utility is as follows:  
 `java [-Dproperty=value] -jar <jar-file>`
 
 * `<jar-file>` denotes the name and location of the Jar file downloaded from Bintray 
 (see [Related Links](#related-links)) or manually built (see [Information for developers](#information-for-developers)).
 * `[-Dproperty=value]` optionally defines a system property, as described in the
-  [Utility Configuration](#utility-configuration) section.
+  [Configuration File](#configuration-file) section.
   
 Following are some examples:
 
 * `java -jar <jar-file>`
 	* Will look for configuration file located at `<user home>/.fortify/FortifySyncFoDToSSC/config.yml`, or `FortifySyncFoDToSSC.yml` in current directory
 	* Will by default store temporary downloaded scans in `<user home>/.fortify/FortifySyncFoDToSSC/scans`
+* `java -Dsync.config=/path/to/config.yaml -jar <jar-file>`
+	* Will look for configuration file located at `/path/to/config.yaml`
+	* Will by default store temporary downloaded scans in `<user home>/.fortify/FortifySyncFoDToSSC/scans`
 * `java -Dfortify.home=/some/dir -jar <jar-file>`
 	* Will look for configuration file located at `/some/dir/FortifySyncFoDToSSC/config.yml`, or `FortifySyncFoDToSSC.yml` in current directory
 	* Will by default store temporary downloaded scans in `/some/dir/FortifySyncFoDToSSC/scans`
 
-Once runinng, the utility will output some log messages to the console; there is no further interaction with 
-the utility at the moment. The utility will run the various synchronization tasks in the background, according 
+Once running, the utility will output some log messages to the console; there is no further interaction with 
+the utility. The utility will run the various synchronization tasks in the background, according 
 to the configured schedules.  
 
-## Managing Mappings
 
-### Setting up a manual mapping
+## Synchronization Settings
 
-In some cases you may want to manually configure a mapping between an FoD release and SSC application version.
-The following steps will allow for manually configuring a mapping:
+Synchronization settings are by default managed automatically by the utility, based on the various
+settings in the utility configuration file. In some cases you may however want to manually control 
+synchronization settings for individual application versions. The following sections describe how
+to manually enable or disable synchronization for an individual application version/release.
+
+### Enable Synchronization
+
+The following steps described how to manually set up synchronization between an SSC application version
+and FoD release:
 
 * Create a new SSC application version, or edit an existing application version that is not being synchronized yet
 * Set the `FoD Sync - Release Id` attribute to the FoD release id that this SSC application version should be synchronized with
 * Set the `FoD Sync - Include Scan Types` attribute to one or more scan types that should be synchronized
 
-### Disable synchronization for specific release
+### Disable Synchronization
 
 To temporarily or permanently disable synchronization for a specific application version, 
 simply deselect all scan types from the `FoD Sync - Include Scan Types` attribute. Likewise,
 you can temporarily or permanently disable synchronization of a specific scan type by deselecting
 that scan type from the `FoD Sync - Include Scan Types` attribute.
 
+Note that removing the FoD release id from the `FoD Sync - Release Id` attribute will usually not 
+be sufficient to disable synchronization, as most likely the value of this attribute will be restored
+during the next run of the 'Link Releases' task.
 
-## Information for developers
+
+## Developers
 
 The following sections provide information that may be useful for developers of this utility.
 
@@ -249,7 +264,7 @@ This project uses Lombok. In order to have your IDE compile this project without
 you may need to add Lombok support to your IDE. Please see https://projectlombok.org/setup/overview 
 for more information.
 
-### Gradle
+### Gradle Wrapper
 
 It is strongly recommended to build this project using the included Gradle Wrapper
 scripts; using other Gradle versions may result in build errors and other issues.
@@ -257,7 +272,7 @@ scripts; using other Gradle versions may result in build errors and other issues
 The Gradle build uses various helper scripts from https://github.com/fortify-ps/gradle-helpers;
 please refer to the documentation and comments in included scripts for more information. 
 
-### Commonly used commands
+### Common Commands
 
 All commands listed below use Linux/bash notation; adjust accordingly if you
 are running on a different platform. All commands are to be executed from
@@ -287,7 +302,7 @@ The various version-related Gradle tasks assume the following versioning methodo
 	* However, note that the Gradle build may be unable to identify a correct version number for the project
 	* As such, only builds from tagged versions or from a `<version>-SNAPSHOT` branch should be published to a Maven repository
 
-### Automated Builds & publishing
+### CI/CD
 
 Travis-CI builds are automatically triggered when there is any change in the project repository,
 for example due to pushing changes, or creating tags or branches. If applicable, binaries and related 
