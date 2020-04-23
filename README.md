@@ -1,17 +1,15 @@
-<head>
-<x-dummy>
-<script language="JavaScript"><!--
+<x-tag-head>
+<x-tag-script language="JavaScript"><!--
 <X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js" />
 <X-INCLUDE url="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" />
 <X-INCLUDE url="${gradleHelpersLocation}/spa_readme.js" />
---></script>
+--></x-tag-script>
 
-<style><!--
+<x-tag-style><!--
 <X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/styles/github.min.css" />
 <X-INCLUDE url="${gradleHelpersLocation}/spa_readme.css" />
---></style>
-</x-dummy>
-</head>
+--></x-tag-style>
+</x-tag-head>
 
 # Fortify FoD-SSC Sync
 
@@ -179,11 +177,11 @@ and modify it according to your requirements. See the comments in the
 information.
 
 <!-- TODO Move Style to class -->
-<div style="width: 95%; height: 25em; margin: auto; overflow:auto;">
-<pre><code class="yaml hljs">
+<x-tag-div style="width: 95%; height: 25em; margin: auto; overflow:auto;">
+<x-tag-pre><x-tag-code class="yaml hljs">
 <X-INCLUDE url="file:config/FortifySyncFoDToSSC-full.yml"/>
-</code></pre>
-</div>
+</x-tag-code></x-tag-pre>
+</x-tag-div>
 
 ### Location 
 The utility will look for the configuration file in these locations, in this order, where 
