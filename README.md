@@ -1,3 +1,17 @@
+<head>
+<script language="JavaScript"><!--
+<!--INCLUDE https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js -->
+<!--INCLUDE https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js -->
+<!--INCLUDE ${gradleHelpersLocation}/spa_readme.js -->
+--></script>
+
+<style><!--
+<!--INCLUDE https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/styles/github.min.css -->
+<!--INCLUDE ${gradleHelpersLocation}/spa_readme.css -->
+--></style>
+</head>
+
+
 # Fortify FoD-SSC Sync
 
 ## Introduction
@@ -156,11 +170,20 @@ flag set to 'no' (i.e. all attributes must be visible).
 
 ## Configuration File
 
+### Contents
 The utility requires a configuration file to operate. Sample configuration files are provided
 in the [config](config/) directory; you will need to download one of these configuration files
 and modify it according to your requirements. See the comments in the 
 [config/FortifySyncFoDToSSC-full.yml](config/FortifySyncFoDToSSC-full.yml) sample file for more 
 information.
+
+<!-- Div is not supported on GitHub, so INCLUDE statement will not be shown -->
+<!-- TODO Move Style to class -->
+<div style="width: 95%; height: 25em; margin: auto; overflow:auto;">
+<pre><code class="yaml hljs">
+<!--INCLUDE file:config/FortifySyncFoDToSSC-full.yml -->
+</code></pre>
+</div>
 
 ### Location 
 The utility will look for the configuration file in these locations, in this order, where 
@@ -317,5 +340,3 @@ See the [Related Links](#related-links) section for the relevant Travis-CI and B
 
 ## License
 See [LICENSE.TXT](LICENSE.TXT)
-
-
