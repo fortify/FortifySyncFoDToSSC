@@ -1,12 +1,23 @@
 <x-tag-head>
+<x-tag-meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+
 <x-tag-script language="JavaScript"><!--
-<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js" />
+<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js"/>
+--></x-tag-script>
+
+<x-tag-script language="JavaScript"><!--
 <X-INCLUDE url="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" />
+--></x-tag-script>
+
+<x-tag-script language="JavaScript"><!--
 <X-INCLUDE url="${gradleHelpersLocation}/spa_readme.js" />
 --></x-tag-script>
 
 <x-tag-style><!--
 <X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/styles/github.min.css" />
+--></x-tag-style>
+
+<x-tag-style><!--
 <X-INCLUDE url="${gradleHelpersLocation}/spa_readme.css" />
 --></x-tag-style>
 </x-tag-head>
@@ -178,7 +189,7 @@ information.
 
 <!-- TODO Move Style to class -->
 <x-tag-div style="width: 95%; height: 25em; margin: auto; overflow:auto;">
-<x-tag-pre><x-tag-code class="yaml hljs">
+<x-tag-pre><x-tag-code style="overflow-x: visible;" class="yaml hljs">
 <X-INCLUDE url="file:config/FortifySyncFoDToSSC-full.yml"/>
 </x-tag-code></x-tag-pre>
 </x-tag-div>
@@ -337,4 +348,8 @@ See the [Related Links](#related-links) section for the relevant Travis-CI and B
 
 
 ## License
+<x-insert text="<!--"/>
 See [LICENSE.TXT](LICENSE.TXT)
+<x-insert text="-->"/>
+
+<x-include url="file:LICENSE.TXT"/>
