@@ -349,7 +349,9 @@ See the [Related Links](#related-links) section for the relevant Travis-CI and B
 
 ## License
 <x-insert text="<!--"/>
+
 See [LICENSE.TXT](LICENSE.TXT)
+
 <x-insert text="-->"/>
 
 <x-include url="file:LICENSE.TXT"/>
