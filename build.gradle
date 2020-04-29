@@ -46,9 +46,9 @@ apply from: "${gradleHelpersLocation}/version-helper.gradle"
 // Project and plugin version based on SCM information
 version = getProjectVersionAsBetaOrRelease(true)
 ext {
+	bintrayRepo = "${getBetaOrReleaseLabel()}"
+	bintrayPkgName = "${rootProject.name}"
 	bintrayDownloadContainerName = getProjectVersionAsBetaOrRelease(false)
-	betaOrReleaseLabel = getBetaOrReleaseLabel()
-	bintrayPkgName = "${rootProject.name}-${betaOrReleaseLabel}"
 	projectLicense = 'MIT'
 }
 

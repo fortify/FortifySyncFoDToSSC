@@ -43,8 +43,8 @@ on a configurable schedule:
 
 * **Downloads**:  
   _Beta versions may be unstable or non-functional. The `*-licenseReport.zip` and `*-dependencySources.zip` files are for informational purposes only and do not need to be downloaded._
-	* **Release versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-release?order=desc&sort=fileLastModified&basePath=&tab=files  
-	* **Beta versions**: https://bintray.com/package/files/fortify-ps/binaries/FortifySyncFoDToSSC-beta?order=desc&sort=fileLastModified&basePath=&tab=files
+	* **Release versions**: https://bintray.com/package/files/fortify-ps/release/FortifySyncFoDToSSC?order=desc&sort=fileLastModified&basePath=&tab=files  
+	* **Beta versions**: https://bintray.com/package/files/fortify-ps/beta/FortifySyncFoDToSSC?order=desc&sort=fileLastModified&basePath=&tab=files
 	* **Sample configuration files**: [config](config)
 * **GitHub**: https://github.com/fortify-ps/FortifySyncFoDToSSC
 * **Automated builds**: https://travis-ci.com/fortify-ps/FortifySyncFoDToSSC
