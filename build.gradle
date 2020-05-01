@@ -47,7 +47,8 @@ apply from: "${gradleHelpersLocation}/version-helper.gradle"
 // Project and plugin version based on SCM information
 version = getProjectVersionAsBetaOrRelease(true)
 ext {
-	bintrayRepo = "${getBetaOrReleaseLabel()}"
+	betaOrReleaseLabel = getBetaOrReleaseLabel() 
+	bintrayRepo = "${betaOrReleaseLabel}"
 	bintrayPkgName = "${rootProject.name}"
 	bintrayDownloadContainerName = getProjectVersionAsBetaOrRelease(false)
 	projectLicense = 'MIT'
@@ -144,6 +145,7 @@ task copyExtraJibFiles(type: Copy) {
 jib {
 	to {
 		image = "rsenden/sync-fod-to-ssc:${getProjectVersionAsBetaOrRelease(false)}"
+		tags = ['latest', "latest-"+betaOrReleaseLabel]
 		auth {
 			username = System.getenv('DOCKER_IO_USER')
 			password = System.getenv('DOCKER_IO_PASSWORD')
