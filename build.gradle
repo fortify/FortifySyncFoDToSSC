@@ -32,6 +32,7 @@ plugins {
 	id 'org.ajoberstar.grgit' version "4.0.0"
 	id 'com.github.jk1.dependency-license-report' version '1.12'
 	id "org.kordamp.gradle.markdown" version "2.0.0"
+	id 'com.google.cloud.tools.jib' version '2.2.0'
 }
 
 group = 'com.fortify.sync.fod-ssc'
@@ -125,3 +126,42 @@ bintray {
     }
 }
 _bintrayRecordingCopy.dependsOn 'clean', 'dist', 'distThirdParty'
+
+
+task copyExtraJibFiles(type: Copy) {
+	into "${buildDir}/jibExtraFiles"
+	into("default/config/samples") {
+		from "${projectDir}/config"
+	}
+	into("default/config") {
+		from "${projectDir}/config"
+		include 'FortifySyncFoDToSSC-minimal.yml'
+		rename 'FortifySyncFoDToSSC-minimal.yml', 'FortifySyncFoDToSSC.yml'
+	}
+}
+
+
+jib {
+	to {
+		image = "rsenden/sync-fod-to-ssc:${getProjectVersionAsBetaOrRelease(false)}"
+		auth {
+			username = System.getenv('DOCKER_IO_USER')
+			password = System.getenv('DOCKER_IO_PASSWORD')
+		}
+		extraDirectories {
+			paths = ['src/main/jib', "${buildDir}/jibExtraFiles"]
+			permissions = [
+				// Read/write/execute for all, to allow container to run as any user
+				'/config': '777', 
+				'/work': '777'
+	        ]
+		}
+		container {
+			mainClass = 'com.fortify.sync.fod_ssc.PopulateContainerDirs'
+			jvmFlags = ['-DpopulateContainerDirs.targetMainClass=com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication', '-Dsync.config=/config/FortifySyncFoDToSSC.yml', '-Dsync.home=/work']
+			volumes = ['/config', '/work']
+		}
+	}
+}
+tasks.jib.dependsOn copyExtraJibFiles
+tasks.jibBuildTar.dependsOn copyExtraJibFiles
