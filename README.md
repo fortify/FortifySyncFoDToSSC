@@ -258,6 +258,15 @@ the utility. The utility will run the various synchronization tasks in the backg
 to the configured schedules.  
 
 
+## Docker
+
+Preview Docker images for running this utility are currently available at https://hub.docker.com/repository/docker/rsenden/sync-fod-to-ssc/.
+These images are subject to change and should not yet be used in production environments. Once
+more testing has been done, these images will likely move to https://hub.docker.com/u/fortifydocker.
+Please see the instructions at https://hub.docker.com/repository/docker/rsenden/sync-fod-to-ssc/ for details on
+how to configure and run this image.
+
+
 ## Synchronization Settings
 
 Synchronization settings are by default managed automatically by the utility, based on the various
