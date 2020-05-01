@@ -96,7 +96,7 @@ dependencies {
 
 dependencyManagement {
 	imports {
-		mavenBom("com.fortify.client.api:fortify-client-api:5.5-SNAPSHOT")
+		mavenBom("com.fortify.client.api:fortify-client-api:5.5")
 	}
 }
 
