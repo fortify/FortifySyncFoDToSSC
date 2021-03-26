@@ -20,6 +20,7 @@ import com.fortify.client.ssc.connection.SSCAuthenticatingRestConnection.SSCAuth
 import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig;
 import com.fortify.sync.fod_ssc.config.SyncScansTaskConfig;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SSCSyncAttr;
+import com.fortify.util.applier.ifblank.IfBlank;
 
 /**
  * This {@link SpringBootApplication} class provides the following functionality:
@@ -69,7 +70,7 @@ public class FortifySyncFoDToSSCApplication {
 	@Bean
 	@ConfigurationProperties("sync.connections.ssc") 
 	public SSCAuthenticatingRestConnectionBuilder sscConnectionBuilder() {
-		return SSCAuthenticatingRestConnection.builder().multiThreaded(true);
+		return SSCAuthenticatingRestConnection.builder().multiThreaded(true).tokenDescription("FortifySyncFoDToSSC access token");
 	}
 	
 	/**
@@ -116,7 +117,7 @@ public class FortifySyncFoDToSSCApplication {
 		conn.api(FoDReleaseAPI.class)
 			.queryReleases()
 			.maxResults(1)
-			.paramFields(false,"releaseId")
+			.paramFields(IfBlank.ERROR(),"releaseId")
 			.build().getUnique();
 		return conn;
 	}

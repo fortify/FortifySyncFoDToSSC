@@ -56,6 +56,7 @@ import com.fortify.sync.fod_ssc.config.LinkReleasesTaskConfig.ConfigReleaseFilte
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI.LinkedVersionsAndReleasesIds;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncConfig;
+import com.fortify.util.applier.ifblank.IfBlank;
 import com.fortify.util.rest.json.JSONMap;
 import com.fortify.util.rest.json.preprocessor.enrich.JSONMapEnrichWithValue;
 import com.fortify.util.rest.json.preprocessor.filter.AbstractJSONMapFilter.MatchMode;
@@ -143,7 +144,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 			ConfigReleaseFilters releaseFilters = config.getFod().getFilters().getRelease();
 			FoDReleasesQueryBuilder qb = fodConn.api(FoDReleaseAPI.class).queryReleases()
 				.onDemandAll()
-				.paramFilterAnd(false, "applicationId", application.get("applicationId", String.class))
+				.paramFilterAnd(IfBlank.ERROR(), "applicationId", application.get("applicationId", String.class))
 				.preProcessor(new JSONMapEnrichWithValue("application", application));
 			addNotYetLinkedFilter(qb);
 			addParamFilter(qb, releaseFilters);
@@ -161,7 +162,7 @@ public class LinkReleasesTask extends AbstractScheduledTask<LinkReleasesTaskConf
 		 * @param queryConfig
 		 */
 		private final void addParamFilter(IFoDEntityQueryBuilderParamFilter<?> qb, AbstractFoDQueryConfig queryConfig) {
-			qb.paramFilterAnd(true, queryConfig.getFodFilterParam());
+			qb.paramFilterAnd(IfBlank.SKIP(), queryConfig.getFodFilterParam());
 		}
 		
 		/**

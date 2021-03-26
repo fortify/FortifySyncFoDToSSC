@@ -57,6 +57,7 @@ import com.fortify.sync.fod_ssc.connection.ssc.api.SyncAPI.SyncConfigPredicate;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncConfig;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncData;
 import com.fortify.sync.fod_ssc.connection.ssc.api.SyncStatus;
+import com.fortify.util.applier.ifblank.IfBlank;
 import com.fortify.util.rest.json.JSONMap;
 
 /**
@@ -280,8 +281,8 @@ public class SyncScansTask extends AbstractScheduledTask<SyncScansTaskConfig> im
 	private final JSONMap getFodRelease(String fodReleaseId) {
 		return fodConn.api(FoDReleaseAPI.class)
 				.queryReleases()
-				.releaseId(false, fodReleaseId)
-				.paramFields(false, "releaseId", "applicationName", "releaseName", "staticScanDate", "dynamicScanDate", "mobileScanDate")
+				.releaseId(IfBlank.ERROR(), fodReleaseId)
+				.paramFields(IfBlank.ERROR(), "releaseId", "applicationName", "releaseName", "staticScanDate", "dynamicScanDate", "mobileScanDate")
 				.build().getUnique();
 	}
 	
