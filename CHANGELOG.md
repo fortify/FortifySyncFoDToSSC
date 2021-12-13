@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.1](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/compare/v1.2.0...v1.2.1) (2021-12-13)
+
+
+### Bug Fixes
+
+* Fix release process ([ac9098f](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/commit/ac9098f5e3a941fd1e560b3b54d0af447f5ae3e7))
+
 ## [1.2.0](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/compare/v1.1.0...v1.2.0) (2021-12-13)
 
 
