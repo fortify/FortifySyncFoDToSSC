@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.2](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/compare/v1.2.1...v1.2.2) (2021-12-15)
+
+
+### Bug Fixes
+
+* Update (potentially vulnerable) dependency versions ([c95fad5](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/commit/c95fad5a2cfb53557dc550eb4b9d23b685691172))
+
 ### [1.2.1](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/compare/v1.2.0...v1.2.1) (2021-12-13)
 
 
