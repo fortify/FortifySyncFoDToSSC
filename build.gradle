@@ -25,8 +25,8 @@
 
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '2.6.6'
-	id "io.freefair.lombok" version '6.4.2'
+	id 'org.springframework.boot' version '2.7.3'
+	id "io.freefair.lombok" version '6.5.0.3'
 	id 'com.github.jk1.dependency-license-report' version '2.1'
 	id "org.kordamp.gradle.markdown" version "2.2.0"
 	id 'com.google.cloud.tools.jib' version '3.2.1'
@@ -36,12 +36,12 @@ group = 'com.fortify.sync.fod-ssc'
 
 ext {
 	mainClazz = 'com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication'
-	gradleHelpersLocation = "https://raw.githubusercontent.com/fortify-ps/gradle-helpers/1.6"
+	gradleHelpersLocation = "https://raw.githubusercontent.com/fortify/shared-gradle-helpers/1.8"
 }
 
 apply from: "${gradleHelpersLocation}/repo-helper.gradle"
 apply from: "${gradleHelpersLocation}/thirdparty-helper.gradle"
-apply from: "${gradleHelpersLocation}/readme2html.gradle"
+apply from: "${gradleHelpersLocation}/markdown2html.gradle"
 
 sourceCompatibility = 1.8
 
@@ -88,17 +88,24 @@ test {
 	useJUnitPlatform()
 }
 
+task copyMarkdown(type: Copy) {
+	from("${projectDir}") {
+		include "USAGE.md"
+	}
+	into "${m2hSourceDir}"
+ }
+
 task dist(type: Zip) {
-	dependsOn 'build', 'readme2html'
+	dependsOn 'build', 'markdownToHtml'
 	archiveFileName = "${rootProject.name}.zip"
 	destinationDirectory = file("$buildDir/dist")
 	from("${buildDir}/${libsDirName}") {
 		include "${rootProject.name}.jar"
 	}
-	from "${buildDir}/html"
+	from "${m2hOutputDir}"
 	from("${projectDir}") {
 		include "config/**/*"
-		include "LICENSE.TXT"
+		include "LICENSE.txt"
 	}
 }
 
@@ -141,7 +148,7 @@ jib {
 		image = "adoptopenjdk:11-jre"
 	}
 	to {
-		image = "rsenden/sync-fod-to-ssc:${project.properties['jibImageTag']}"
+		image = "fortifydocker/sync-fod-to-ssc:${project.properties['jibImageTag']}"
 		auth {
 			username = System.getenv('DOCKER_HUB_USER') ?: ''
 			password = System.getenv('DOCKER_HUB_TOKEN') ?: ''
