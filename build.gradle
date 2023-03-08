@@ -51,7 +51,7 @@ configurations.all {
 }
 
 dependencies {
-	implementation platform('com.fortify.client.api:fortify-client-api-bom:6.1.4.RELEASE')
+	implementation platform('com.fortify.client.api:fortify-client-api-bom:6.1.5.RELEASE')
 	implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
 	
 	implementation 'commons-lang:commons-lang'	
