@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://www.github.com/fortify/FortifySyncFoDToSSC/compare/v1.2.4...v1.3.0) (2023-03-08)
+
+
+### Features
+
+* Move Docker image to fortifydocker organization ([d42af95](https://www.github.com/fortify/FortifySyncFoDToSSC/commit/d42af956e7f7bd6122663bfa3aed281530a64237))
+
+
+### Bug Fixes
+
+* Update dependency versions to resolve potential vulnerabilities ([f103959](https://www.github.com/fortify/FortifySyncFoDToSSC/commit/f1039592e72ab9649c2a78c5c1c1f519b08eda05))
+* Update Docker base image to resolve potential vulnerabilities ([b587518](https://www.github.com/fortify/FortifySyncFoDToSSC/commit/b587518424f6f83c3f3ed3654c00874bae3ecb8d))
+
 ### [1.2.4](https://www.github.com/fortify-ps/FortifySyncFoDToSSC/compare/v1.2.3...v1.2.4) (2022-04-11)
 
 
