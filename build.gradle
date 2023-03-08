@@ -145,7 +145,7 @@ jar {
 
 jib {
 	from {
-		image = "adoptopenjdk:11-jre"
+		image = "eclipse-temurin:11-jre-alpine"
 	}
 	to {
 		image = "fortifydocker/sync-fod-to-ssc:${project.properties['jibImageTag']}"
