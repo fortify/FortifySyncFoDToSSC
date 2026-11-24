@@ -31,14 +31,14 @@ jobs:
       branch: ${{ steps.info.outputs.branch }}
     steps:
       - name: Check out source
-        uses: fortify/shared-github/actions/3rdparty/actions/checkout/v6@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/checkout/v6@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           persist-credentials: false
 
       - name: Prepare production release
         id: release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: fortify/shared-github/actions/3rdparty/googleapis/release-please-action/v5@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/googleapis/release-please-action/v5@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           release-type: simple
           skip-github-pull-request: true
@@ -96,12 +96,12 @@ jobs:
       RELEASE_VERSION: ${{ needs.release-info.outputs.version }}
     steps:
       - name: Check out source
-        uses: fortify/shared-github/actions/3rdparty/actions/checkout/v6@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/checkout/v6@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           persist-credentials: false
 
       - name: Set up Java
-        uses: fortify/shared-github/actions/3rdparty/actions/setup-java/v5@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/setup-java/v5@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           distribution: temurin
           java-version: '17'
@@ -112,7 +112,7 @@ jobs:
 
       - name: Archive test results
         if: always()
-        uses: fortify/shared-github/actions/3rdparty/actions/upload-artifact/v7@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/upload-artifact/v7@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           name: test-results
           path: |
@@ -121,7 +121,7 @@ jobs:
           retention-days: 7
 
       - name: Archive distributions
-        uses: fortify/shared-github/actions/3rdparty/actions/upload-artifact/v7@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/upload-artifact/v7@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           name: build_artifacts
           path: build/dist/
@@ -142,19 +142,19 @@ jobs:
       BRANCH: ${{ needs.release-info.outputs.branch }}
     steps:
       - name: Check out source
-        uses: fortify/shared-github/actions/3rdparty/actions/checkout/v6@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/checkout/v6@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           persist-credentials: false
 
       - name: Set up Java
-        uses: fortify/shared-github/actions/3rdparty/actions/setup-java/v5@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/setup-java/v5@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
       - name: Download distributions
-        uses: fortify/shared-github/actions/3rdparty/actions/download-artifact/v8@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/actions/download-artifact/v8@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           name: build_artifacts
           path: build/dist
@@ -194,7 +194,7 @@ jobs:
       issues: write
     steps:
       - name: Prepare release PR
-        uses: fortify/shared-github/actions/3rdparty/googleapis/release-please-action/v5@5ad1afec0f56a21b03f0887eea35505cb6a66554
+        uses: fortify/shared-github/actions/3rdparty/googleapis/release-please-action/v5@15d0b01f3bedb5c1523cb806e745f041e9bce5a3
         with:
           release-type: simple
           skip-github-release: true
