@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/fortify/FortifySyncFoDToSSC/compare/v1.3.0...v2.0.0) (2026-11-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* Java 17 or later is required.
+
+### Bug Fixes
+
+* modernize runtime, build, and CI ([8aa0b83](https://github.com/fortify/FortifySyncFoDToSSC/commit/8aa0b839ca2abbca850776880ad166b908b96718))
+
 ## [1.3.0](https://www.github.com/fortify/FortifySyncFoDToSSC/compare/v1.2.4...v1.3.0) (2023-03-08)
 
 
