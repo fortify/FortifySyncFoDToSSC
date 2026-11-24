@@ -32,7 +32,7 @@ package com.fortify.sync.fod_ssc.config;
  */
 public interface IScheduleConfig {
 	/**
-	 * Get the cron schedule; see https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html
+	 * Get the cron schedule; see https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/scheduling/support/CronExpression.html
 	 * for supported formats.
 	 * 
 	 * @return

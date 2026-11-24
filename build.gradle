@@ -23,54 +23,79 @@
  * IN THE SOFTWARE.
  ******************************************************************************/
 
+buildscript {
+	configurations.classpath {
+		resolutionStrategy.dependencySubstitution {
+			substitute module('com.overzealous:remark:1.1.0') using module('com.wavefront:remark:2023-07.07') because 'the original artifact is no longer available on Maven Central'
+		}
+	}
+}
+
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '2.7.3'
-	id "io.freefair.lombok" version '6.5.0.3'
-	id 'com.github.jk1.dependency-license-report' version '2.1'
+	id 'org.springframework.boot' version '4.2.0'
+	id 'io.freefair.lombok' version '9.8.3'
+	id 'com.github.jk1.dependency-license-report' version '3.1.5'
 	id "org.kordamp.gradle.markdown" version "2.2.0"
-	id 'com.google.cloud.tools.jib' version '3.2.1'
+	id 'com.google.cloud.tools.jib' version '3.5.4'
 }
 
 group = 'com.fortify.sync.fod-ssc'
+version = providers.gradleProperty('version').getOrElse(new Date().format('0.yyyyMMdd.HHmmss'))
 
 ext {
 	mainClazz = 'com.fortify.sync.fod_ssc.FortifySyncFoDToSSCApplication'
-	gradleHelpersLocation = "https://raw.githubusercontent.com/fortify/shared-gradle-helpers/1.8"
+	gradleHelpersLocation = 'https://raw.githubusercontent.com/fortify/shared-gradle-helpers/5224f5972906d79d6553ee7035841c0a3400741d'
+	thirdPartyBaseName = rootProject.name
 }
 
-apply from: "${gradleHelpersLocation}/repo-helper.gradle"
+repositories {
+	mavenCentral()
+}
+
 apply from: "${gradleHelpersLocation}/thirdparty-helper.gradle"
 apply from: "${gradleHelpersLocation}/markdown2html.gradle"
 
-sourceCompatibility = 1.8
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
 
-configurations.all {
-    // Don't cache modules that may change (i.e. snapshots)
-	resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+lombok {
+	version = '1.18.48'
 }
 
 dependencies {
-	implementation platform('com.fortify.client.api:fortify-client-api-bom:6.1.5.RELEASE')
+	implementation platform('com.fortify.client.api:fortify-client-api-bom:7.0.1.RELEASE')
 	implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
-	
-	implementation 'commons-lang:commons-lang'	
-	implementation 'com.fasterxml.jackson.core:jackson-core'
-	implementation 'com.fasterxml.jackson.core:jackson-databind'
-	implementation 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider'
-	implementation 'org.springframework.boot:spring-boot-starter-quartz'
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
-		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	implementation platform('com.fasterxml.jackson:jackson-bom:2.23.0')
+	// Fortify client uses the Apache HTTP 4 connector, which was removed in Jersey 4.
+	implementation enforcedPlatform('org.glassfish.jersey:jersey-bom:3.1.12')
+	implementation('jakarta.ws.rs:jakarta.ws.rs-api') {
+		version { strictly '3.1.0' }
 	}
 	
+	implementation 'org.apache.commons:commons-lang3:3.22.0'
+	implementation 'com.fasterxml.jackson.core:jackson-core'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider'
+	implementation 'org.springframework.boot:spring-boot-starter-quartz'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
 	// Fortify client API dependencies
-	implementation('com.fortify.client.api:common-spring')  { changing = false }
-	implementation('com.fortify.client.api:common-rest')    { changing = false }
-	implementation('com.fortify.client.api:client-api-ssc') { changing = false }
-	implementation('com.fortify.client.api:client-api-fod') { changing = false }
+	implementation 'com.fortify.client.api:common-spring'
+	implementation 'com.fortify.client.api:common-rest'
+	implementation 'com.fortify.client.api:client-api-ssc'
+	implementation 'com.fortify.client.api:client-api-fod'
 }
 
-bootJar {
+springBoot {
+	mainClass = mainClazz
+}
+
+tasks.named('bootJar') {
 	archiveFileName = "${rootProject.name}.jar"
 	manifest {
 		attributes(
@@ -80,28 +105,24 @@ bootJar {
 	}
 }
 
-ext {
-	thirdPartyBaseName = "${rootProject.name}"
-}
-
-test {
+tasks.named('test') {
 	useJUnitPlatform()
+	systemProperty 'sync.config', file('config/FortifySyncFoDToSSC-minimal.yml').absolutePath
+	systemProperty 'sync.home', layout.buildDirectory.dir('test-work').get().asFile.absolutePath
 }
 
-task copyMarkdown(type: Copy) {
+tasks.register('copyMarkdown', Copy) {
 	from("${projectDir}") {
 		include "USAGE.md"
 	}
 	into "${m2hSourceDir}"
  }
 
-task dist(type: Zip) {
+tasks.register('dist', Zip) {
 	dependsOn 'build', 'markdownToHtml'
 	archiveFileName = "${rootProject.name}.zip"
-	destinationDirectory = file("$buildDir/dist")
-	from("${buildDir}/${libsDirName}") {
-		include "${rootProject.name}.jar"
-	}
+	destinationDirectory = layout.buildDirectory.dir('dist')
+	from tasks.named('bootJar')
 	from "${m2hOutputDir}"
 	from("${projectDir}") {
 		include "config/**/*"
@@ -109,8 +130,8 @@ task dist(type: Zip) {
 	}
 }
 
-task copyExtraJibFiles(type: Copy) {
-	into "${buildDir}/jibExtraFiles"
+def copyExtraJibFiles = tasks.register('copyExtraJibFiles', Sync) {
+	into layout.buildDirectory.dir('jibExtraFiles')
 	into("default/config/samples") {
 		from "${projectDir}/config"
 	}
@@ -121,20 +142,10 @@ task copyExtraJibFiles(type: Copy) {
 	}
 }
 
-gradle.taskGraph.whenReady { graph ->
-    if (graph.hasTask(':jib')) {
-    	if (!project.hasProperty('jibImageTag')) {
-        	throw new GradleException("Property jibImageTag must be set when executing jib task")
-        }
-    	def jibExtraImageTagsString = project.properties["jibExtraImageTags"]?.trim()
-    	if ( jibExtraImageTagsString ) {
-    		jib.to.tags = jibExtraImageTagsString.split(',') as List
-    	}
-    } 
-}
+def jibImageTag = providers.gradleProperty('jibImageTag')
 
 // Configuration for jar-file used by jib
-jar {
+tasks.named('jar') {
 	manifest {
 		attributes(
 			'Implementation-Title':   "${project.name}",
@@ -145,28 +156,39 @@ jar {
 
 jib {
 	from {
-		image = "eclipse-temurin:11-jre-alpine"
+		image = 'eclipse-temurin:17.0.21.1_2-jre-alpine@sha256:2b4113ae80e31f103b284dd3bc3e008add670cf8555417b5b289fa1128f2f0a3'
 	}
 	to {
-		image = "fortifydocker/sync-fod-to-ssc:${project.properties['jibImageTag']}"
+		image = "fortifydocker/sync-fod-to-ssc:${jibImageTag.getOrElse('local')}"
+		tags = providers.gradleProperty('jibExtraImageTags').getOrElse('')
+			.split(',').collect { it.trim() }.findAll { !it.isEmpty() } as Set
 		auth {
 			username = System.getenv('DOCKER_HUB_USER') ?: ''
 			password = System.getenv('DOCKER_HUB_TOKEN') ?: ''
 		}
-		extraDirectories {
-			paths = ['src/main/jib', "${buildDir}/jibExtraFiles"]
-			permissions = [
-				// Read/write/execute for all, to allow container to run as any user
-				'/config': '777', 
-				'/work': '777'
-	        ]
-		}
-		container {
-			mainClass = 'com.fortify.sync.fod_ssc.PopulateContainerDirs'
-			jvmFlags = ["-DpopulateContainerDirs.targetMainClass=${mainClazz}".toString(), '-Dsync.config=/config/FortifySyncFoDToSSC.yml', '-Dsync.home=/work']
-			volumes = ['/config', '/work']
+	}
+	extraDirectories {
+		paths = ['src/main/jib', layout.buildDirectory.dir('jibExtraFiles').get().asFile]
+		permissions = [
+			// Read/write/execute for all, to allow container to run as any user
+			'/config': '777',
+			'/work': '777'
+		]
+	}
+	container {
+		mainClass = 'com.fortify.sync.fod_ssc.PopulateContainerDirs'
+		jvmFlags = ["-DpopulateContainerDirs.targetMainClass=${mainClazz}".toString(), '-Dsync.config=/config/FortifySyncFoDToSSC.yml', '-Dsync.home=/work']
+		volumes = ['/config', '/work']
+	}
+}
+
+tasks.named('jib') {
+	doFirst {
+		if (!jibImageTag.isPresent() || jibImageTag.get().isBlank()) {
+			throw new GradleException('Property jibImageTag must be set when executing jib task')
 		}
 	}
 }
-tasks.jib.dependsOn copyExtraJibFiles
-tasks.jibBuildTar.dependsOn copyExtraJibFiles
+tasks.matching { it.name in ['jib', 'jibBuildTar', 'jibDockerBuild'] }.configureEach {
+	dependsOn copyExtraJibFiles
+}

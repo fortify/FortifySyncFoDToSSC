@@ -5,11 +5,11 @@
 <x-tag-meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 
 <x-tag-script language="JavaScript"><!--
-<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/highlight.min.js"/>
+<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js"/>
 --></x-tag-script>
 
 <x-tag-script language="JavaScript"><!--
-<X-INCLUDE url="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" />
+<X-INCLUDE url="https://code.jquery.com/jquery-4.1.0.min.js" />
 --></x-tag-script>
 
 <x-tag-script language="JavaScript"><!--
@@ -17,7 +17,7 @@
 --></x-tag-script>
 
 <x-tag-style><!--
-<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.0.0/build/styles/github.min.css" />
+<X-INCLUDE url="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/styles/github.min.css" />
 --></x-tag-style>
 
 <x-tag-style><!--
@@ -225,7 +225,7 @@ Some examples:
 
 ### Requirements
 The utility is provided as a single runnable JAR file; you will need to have a Java 
-Runtime Environment (JRE) version 1.8 or later installed in order to run the utility.
+Runtime Environment (JRE) version 17 or later installed in order to run the utility.
 Before running the utility, you will need to have prepared the utility configuration
 file; see [Utility Configuration](#utility-configuration)) for details.
 
@@ -256,7 +256,8 @@ to the configured schedules.
 
 ### Docker
 
-Docker images for running this utility are available at https://hub.docker.com/repository/docker/fortify/sync-fod-to-ssc/.
+Docker images for running this utility are available at https://hub.docker.com/repository/docker/fortifydocker/sync-fod-to-ssc/.
+The image uses Eclipse Temurin 17.0.21.1+2 (November 17, 2026 patch release), pinned by digest.
 Please see the instructions in the Docker Hub repository for details on how to configure and run this image.
 
 

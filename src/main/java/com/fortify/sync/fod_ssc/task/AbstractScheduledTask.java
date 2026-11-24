@@ -24,16 +24,16 @@
  ******************************************************************************/
 package com.fortify.sync.fod_ssc.task;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.support.CronSequenceGenerator;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.scheduling.support.CronTrigger;
 
 import com.fortify.sync.fod_ssc.config.IScheduleConfig;
@@ -51,7 +51,7 @@ public abstract class AbstractScheduledTask<C extends IScheduleConfig> implement
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractScheduledTask.class);
 	private final String DEFAULT_TASK_NAME = this.getClass().getSimpleName();
 	@Autowired private TaskScheduler scheduler;
-	private CronSequenceGenerator cronSequenceGenerator;
+	private CronExpression cronExpression;
 	
 	/**
 	 * Set up scheduled task execution if a valid schedule has been configured.  
@@ -68,15 +68,15 @@ public abstract class AbstractScheduledTask<C extends IScheduleConfig> implement
 		}
 	}
 	
-	private final Date getNextExecutionTime() {
-		return getCronSequenceGenerator().next(new Date());
+	private final ZonedDateTime getNextExecutionTime() {
+		return getCronExpression().next(ZonedDateTime.now());
 	}
 
-	private final CronSequenceGenerator getCronSequenceGenerator() {
-		if ( cronSequenceGenerator==null ) {
-			cronSequenceGenerator = new CronSequenceGenerator(getConfig().getCronSchedule());
+	private final CronExpression getCronExpression() {
+		if ( cronExpression==null ) {
+			cronExpression = CronExpression.parse(getConfig().getCronSchedule());
 		}
-		return cronSequenceGenerator;
+		return cronExpression;
 	}
 
 	/**
